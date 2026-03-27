@@ -11,6 +11,7 @@ const config = {
   height: MAP_HEIGHT,
   backgroundColor: '#1a1a2e',
   parent: 'game-container',
+  dom: { createContainer: true },
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
