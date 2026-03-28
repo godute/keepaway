@@ -1,0 +1,20 @@
+{
+  "name": "Keepaway - 황금 뼈다귀를 지켜라!",
+  "short_name": "Keepaway",
+  "description": "귀여운 강아지들의 실시간 멀티플레이어 뼈다귀 쟁탈전!",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "theme_color": "#0f0c29",
+  "background_color": "#0f0c29",
+  "lang": "ko",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -6,6 +6,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Keepaway</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f0c29" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+  <meta name="description" content="귀여운 강아지들의 실시간 멀티플레이어 뼈다귀 쟁탈전!" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&display=swap" rel="stylesheet">
   <style>
@@ -399,6 +405,11 @@
         screen.orientation.lock('landscape').catch(() => {});
       }
     } catch(e) {}
+
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>
