@@ -120,7 +120,7 @@ export class LobbyScene extends Phaser.Scene {
   // --- View switching ---
 
   _showPreRoom() {
-    this._preView.style.display = '';
+    this._preView.style.display = 'block';
     this._roomView.style.display = 'none';
     this._joinSection.style.display = 'none';
     this._setStatus('');
@@ -128,7 +128,7 @@ export class LobbyScene extends Phaser.Scene {
 
   _showRoomView() {
     this._preView.style.display = 'none';
-    this._roomView.style.display = '';
+    this._roomView.style.display = 'block';
   }
 
   _hideOverlay() {
@@ -152,7 +152,7 @@ export class LobbyScene extends Phaser.Scene {
 
   _showJoinInput() {
     this._joinSection.style.display = 'block';
-    this._codeInput.focus();
+    setTimeout(() => this._codeInput.focus(), 50);
   }
 
   async _createRoom() {
@@ -218,11 +218,11 @@ export class LobbyScene extends Phaser.Scene {
     this._playerList.innerHTML = listHtml;
 
     if (isHost && state.players.length >= 2) {
-      this._startBtn.style.display = '';
+      this._startBtn.style.display = 'block';
       this._waitText.style.display = 'none';
     } else {
       this._startBtn.style.display = 'none';
-      this._waitText.style.display = '';
+      this._waitText.style.display = 'block';
     }
   }
 
