@@ -99,10 +99,11 @@ class GameRoom {
       p.y = 300 + Math.sin((idx / this.players.size) * Math.PI * 2) * 150;
     });
 
-    this.bone = this._randomBonePosition();
+    // Spawn bone at center — away from all players (radius 150 circle)
+    this.bone = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
     this.boneOwner = null;
     this.boneVisible = true;
-    this.boneDropCooldown = 0;
+    this.boneDropCooldown = 1.5; // Grace period: nobody can pick up for 1.5s
 
     this.io.to(this.code).emit('game:start', {
       mapWidth: MAP_WIDTH,
