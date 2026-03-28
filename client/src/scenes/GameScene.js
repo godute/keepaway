@@ -119,7 +119,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // --- Obstacles (drawn after receiving game:start) ---
-    this._obstacleGraphics = this.add.graphics().setDepth(5);
+    this._obstacleGraphics = this.add.graphics().setDepth(15);
 
     // --- Bone ---
     this.boneGlow = this.add.circle(0, 0, 30, 0xffd700, 0.15);
@@ -259,110 +259,156 @@ export class GameScene extends Phaser.Scene {
       const cy = obs.y + obs.h / 2;
       const type = obs.type || 'tree';
 
-      // Bold shadow for all obstacles
-      g.fillStyle(0x000000, 0.4);
-      g.fillEllipse(cx + 3, obs.y + obs.h + 6, obs.w + 6, 14);
+      // Heavy shadow for all obstacles
+      g.fillStyle(0x000000, 0.5);
+      g.fillEllipse(cx + 4, obs.y + obs.h + 8, obs.w + 12, 18);
 
       if (type === 'tree') {
-        // Trunk
-        g.fillStyle(0x8b5e2a, 1);
-        g.fillRoundedRect(cx - 9, cy, 18, obs.h / 2 + 6, 4);
-        // Canopy glow ring
-        g.lineStyle(3, 0x66ff66, 0.25);
-        g.strokeCircle(cx, cy - 6, obs.w / 2 + 6);
-        // Main canopy (bright green, full opacity)
-        g.fillStyle(0x4cc44c, 1);
-        g.fillCircle(cx, cy - 6, obs.w / 2 + 2);
-        g.fillStyle(0x5dd55d, 0.9);
-        g.fillCircle(cx - 9, cy - 2, obs.w / 3);
-        g.fillCircle(cx + 9, cy - 2, obs.w / 3);
-        g.fillStyle(0x6ee66e, 0.7);
-        g.fillCircle(cx, cy - 14, obs.w / 3);
-        // Bright highlights
-        g.fillStyle(0x99ff99, 0.6);
-        g.fillCircle(cx - 5, cy - 14, 8);
-        g.fillCircle(cx + 7, cy - 9, 6);
+        // === TREE - Very bright, unmissable ===
+        // Outer glow ring (bright yellow-green)
+        g.lineStyle(4, 0xaaff44, 0.5);
+        g.strokeCircle(cx, cy - 6, obs.w / 2 + 12);
+        // Trunk (thick, dark brown)
+        g.fillStyle(0xa0642a, 1);
+        g.fillRoundedRect(cx - 12, cy + 2, 24, obs.h / 2 + 10, 5);
+        g.lineStyle(2, 0x5a3a1a, 0.8);
+        g.strokeRoundedRect(cx - 12, cy + 2, 24, obs.h / 2 + 10, 5);
+        // Main canopy (VERY bright green)
+        g.fillStyle(0x55ee44, 1);
+        g.fillCircle(cx, cy - 8, obs.w / 2 + 6);
+        g.fillStyle(0x77ff66, 1);
+        g.fillCircle(cx - 12, cy - 4, obs.w / 3 + 2);
+        g.fillCircle(cx + 12, cy - 4, obs.w / 3 + 2);
+        g.fillStyle(0x88ff77, 0.9);
+        g.fillCircle(cx, cy - 18, obs.w / 3 + 2);
+        // Bright white highlights
+        g.fillStyle(0xccffbb, 0.7);
+        g.fillCircle(cx - 8, cy - 16, 10);
+        g.fillCircle(cx + 10, cy - 12, 8);
+        // Bold outline
+        g.lineStyle(3, 0xffffff, 0.5);
+        g.strokeCircle(cx, cy - 8, obs.w / 2 + 6);
 
       } else if (type === 'rock') {
-        // Glow ring
-        g.lineStyle(3, 0xbbbbcc, 0.35);
-        g.strokeEllipse(cx, cy, obs.w + 8, obs.h + 8);
-        // Main body (bright gray)
-        g.fillStyle(0x99aaaa, 1);
-        g.fillEllipse(cx, cy, obs.w + 2, obs.h + 2);
+        // === ROCK - Bright gray with strong outline ===
+        // Outer glow
+        g.lineStyle(4, 0xeeeeff, 0.4);
+        g.strokeEllipse(cx, cy, obs.w + 14, obs.h + 14);
+        // Main body (bright light gray)
+        g.fillStyle(0xbbcccc, 1);
+        g.fillEllipse(cx, cy, obs.w + 6, obs.h + 6);
         // Highlight
-        g.fillStyle(0xbbcccc, 0.7);
-        g.fillEllipse(cx - 4, cy - 4, obs.w * 0.6, obs.h * 0.5);
-        // Crack
-        g.lineStyle(1.5, 0x667777, 0.5);
-        g.lineBetween(cx - 6, cy - 2, cx + 4, cy + 6);
+        g.fillStyle(0xddeedd, 0.9);
+        g.fillEllipse(cx - 5, cy - 5, obs.w * 0.7, obs.h * 0.6);
+        // Top shine
+        g.fillStyle(0xffffff, 0.5);
+        g.fillEllipse(cx - 3, cy - 8, obs.w * 0.4, obs.h * 0.3);
+        // Crack details
+        g.lineStyle(2, 0x778888, 0.7);
+        g.lineBetween(cx - 8, cy - 3, cx + 6, cy + 8);
+        g.lineBetween(cx + 2, cy - 5, cx - 4, cy + 4);
         // Side rock
-        g.fillStyle(0x889999, 0.9);
-        g.fillEllipse(cx + obs.w / 2, cy + obs.h / 3, 12, 10);
+        g.fillStyle(0xaabbbb, 1);
+        g.fillEllipse(cx + obs.w / 2 + 4, cy + obs.h / 3, 14, 12);
+        // Bold outline
+        g.lineStyle(3, 0xffffff, 0.45);
+        g.strokeEllipse(cx, cy, obs.w + 6, obs.h + 6);
 
       } else if (type === 'fence') {
-        // Glow outline
-        g.lineStyle(3, 0xddaa44, 0.4);
-        g.strokeRoundedRect(obs.x - 2, obs.y - 2, obs.w + 4, obs.h + 4, 4);
-        // Main plank (bright brown)
-        g.fillStyle(0xbb8822, 1);
+        // === FENCE - Bright wood with clear posts ===
+        // Outer glow
+        g.lineStyle(4, 0xffcc55, 0.5);
+        g.strokeRoundedRect(obs.x - 4, obs.y - 12, obs.w + 8, obs.h + 24, 4);
+        // Posts (tall, prominent)
+        g.fillStyle(0x996622, 1);
+        g.fillRoundedRect(obs.x + 6, obs.y - 14, 12, obs.h + 28, 3);
+        g.fillRoundedRect(obs.x + obs.w - 18, obs.y - 14, 12, obs.h + 28, 3);
+        g.lineStyle(2, 0x664411, 0.8);
+        g.strokeRoundedRect(obs.x + 6, obs.y - 14, 12, obs.h + 28, 3);
+        g.strokeRoundedRect(obs.x + obs.w - 18, obs.y - 14, 12, obs.h + 28, 3);
+        // Main plank (bright warm brown)
+        g.fillStyle(0xddaa44, 1);
         g.fillRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
-        // Detail
-        g.fillStyle(0xcc9933, 0.7);
+        // Plank detail stripes
+        g.fillStyle(0xeebb55, 0.8);
         g.fillRoundedRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h / 2 - 1, 2);
-        // Posts (tall, dark)
-        g.fillStyle(0x8b6914, 1);
-        g.fillRoundedRect(obs.x + 4, obs.y - 8, 10, obs.h + 16, 3);
-        g.fillRoundedRect(obs.x + obs.w - 14, obs.y - 8, 10, obs.h + 16, 3);
-        // Nails
-        g.fillStyle(0x666666, 0.7);
-        g.fillCircle(obs.x + 9, cy, 2.5);
-        g.fillCircle(obs.x + obs.w - 9, cy, 2.5);
+        // Wood grain lines
+        g.lineStyle(1, 0xbb8833, 0.5);
+        g.lineBetween(obs.x + 20, obs.y + 3, obs.x + obs.w - 20, obs.y + 3);
+        g.lineBetween(obs.x + 20, obs.y + obs.h - 3, obs.x + obs.w - 20, obs.y + obs.h - 3);
+        // Nail details
+        g.fillStyle(0x888888, 0.9);
+        g.fillCircle(obs.x + 12, cy, 3);
+        g.fillCircle(obs.x + obs.w - 12, cy, 3);
+        // Bold outline
+        g.lineStyle(2, 0xffffff, 0.35);
+        g.strokeRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
 
       } else if (type === 'pond') {
-        // Outer glow
-        g.lineStyle(3, 0x44aaff, 0.4);
-        g.strokeEllipse(cx, cy, obs.w + 14, obs.h + 14);
-        // Shore ring
-        g.fillStyle(0x886644, 0.5);
-        g.fillEllipse(cx, cy, obs.w + 10, obs.h + 10);
-        // Water
-        g.fillStyle(0x2288cc, 0.85);
-        g.fillEllipse(cx, cy, obs.w + 4, obs.h + 4);
-        g.fillStyle(0x44aaee, 0.8);
-        g.fillEllipse(cx, cy, obs.w - 6, obs.h - 6);
-        // Shine
-        g.fillStyle(0x88ddff, 0.5);
-        g.fillEllipse(cx - 8, cy - 8, obs.w * 0.4, obs.h * 0.25);
-        // Ripple
-        g.lineStyle(1.5, 0xaaddff, 0.5);
-        g.strokeEllipse(cx + 6, cy + 4, 20, 12);
+        // === POND - Bright blue, very obvious ===
+        // Outer glow (wide, bright)
+        g.lineStyle(5, 0x66ccff, 0.5);
+        g.strokeEllipse(cx, cy, obs.w + 20, obs.h + 20);
+        // Shore ring (sandy)
+        g.fillStyle(0xccaa66, 0.7);
+        g.fillEllipse(cx, cy, obs.w + 14, obs.h + 14);
+        // Water (bright vivid blue)
+        g.fillStyle(0x3399ee, 1);
+        g.fillEllipse(cx, cy, obs.w + 6, obs.h + 6);
+        g.fillStyle(0x55bbff, 0.9);
+        g.fillEllipse(cx, cy, obs.w - 4, obs.h - 4);
+        // Bright shine
+        g.fillStyle(0xaaeeff, 0.7);
+        g.fillEllipse(cx - 10, cy - 10, obs.w * 0.45, obs.h * 0.3);
+        // White sparkle
+        g.fillStyle(0xffffff, 0.6);
+        g.fillCircle(cx - 14, cy - 12, 5);
+        g.fillCircle(cx - 8, cy - 8, 3);
+        // Ripples
+        g.lineStyle(2, 0xcceeFF, 0.6);
+        g.strokeEllipse(cx + 8, cy + 6, 22, 14);
+        g.strokeEllipse(cx - 6, cy + 2, 16, 10);
         // Lily pad
-        g.fillStyle(0x55cc55, 0.8);
-        g.fillCircle(cx + 18, cy + 12, 8);
-        g.fillStyle(0xff99bb, 0.7);
-        g.fillCircle(cx + 18, cy + 11, 3);
+        g.fillStyle(0x55dd55, 1);
+        g.fillCircle(cx + 22, cy + 14, 10);
+        g.lineStyle(1.5, 0x339933, 0.7);
+        g.strokeCircle(cx + 22, cy + 14, 10);
+        // Flower on lily
+        g.fillStyle(0xff88bb, 0.9);
+        g.fillCircle(cx + 22, cy + 13, 4);
+        // Bold outline
+        g.lineStyle(3, 0xffffff, 0.35);
+        g.strokeEllipse(cx, cy, obs.w + 6, obs.h + 6);
 
       } else if (type === 'bush') {
-        // Glow ring
-        g.lineStyle(3, 0x55ee55, 0.3);
-        g.strokeEllipse(cx, cy, obs.w + 10, obs.h + 10);
-        // Main body (bright vibrant green)
-        g.fillStyle(0x44aa44, 1);
-        g.fillEllipse(cx, cy, obs.w + 4, obs.h + 4);
-        g.fillStyle(0x55bb55, 0.9);
-        g.fillEllipse(cx - 6, cy - 2, obs.w * 0.6, obs.h * 0.7);
-        g.fillEllipse(cx + 6, cy + 2, obs.w * 0.6, obs.h * 0.7);
+        // === BUSH - Bright green with red berries ===
+        // Outer glow
+        g.lineStyle(4, 0x88ff66, 0.45);
+        g.strokeEllipse(cx, cy, obs.w + 16, obs.h + 16);
+        // Main body (VERY bright green)
+        g.fillStyle(0x55cc44, 1);
+        g.fillEllipse(cx, cy, obs.w + 8, obs.h + 8);
+        g.fillStyle(0x66dd55, 1);
+        g.fillEllipse(cx - 8, cy - 3, obs.w * 0.7, obs.h * 0.8);
+        g.fillEllipse(cx + 8, cy + 3, obs.w * 0.7, obs.h * 0.8);
         // Bright highlights
-        g.fillStyle(0x88ee88, 0.6);
-        g.fillCircle(cx - 4, cy - 7, 7);
-        g.fillCircle(cx + 8, cy - 5, 6);
-        // Berries (bright red, very visible)
-        g.fillStyle(0xff3333, 0.9);
-        g.fillCircle(cx + 11, cy + 4, 4);
-        g.fillCircle(cx - 9, cy + 7, 3.5);
-        g.fillCircle(cx + 2, cy + 9, 3);
-        g.fillCircle(cx - 4, cy - 2, 2.5);
+        g.fillStyle(0x99ff88, 0.7);
+        g.fillCircle(cx - 6, cy - 10, 9);
+        g.fillCircle(cx + 10, cy - 7, 8);
+        g.fillCircle(cx, cy - 4, 6);
+        // BIG red berries (very visible)
+        g.fillStyle(0xff2222, 1);
+        g.fillCircle(cx + 14, cy + 5, 5);
+        g.fillCircle(cx - 12, cy + 8, 5);
+        g.fillCircle(cx + 3, cy + 12, 4.5);
+        g.fillCircle(cx - 5, cy - 3, 4);
+        // Berry shine
+        g.fillStyle(0xff8888, 0.7);
+        g.fillCircle(cx + 13, cy + 3, 2);
+        g.fillCircle(cx - 13, cy + 6, 2);
+        // Bold outline
+        g.lineStyle(3, 0xffffff, 0.4);
+        g.strokeEllipse(cx, cy, obs.w + 8, obs.h + 8);
       }
     }
   }
@@ -696,28 +742,32 @@ export class GameScene extends Phaser.Scene {
 
     // HTML overlay button for reliable mobile tapping
     const lobbyBtn = document.createElement('button');
-    lobbyBtn.textContent = '\ub85c\ube44\ub85c \ub3cc\uc544\uac00\uae30';
+    lobbyBtn.textContent = '로비로 돌아가기';
     Object.assign(lobbyBtn.style, {
-      position: 'fixed', left: '50%', bottom: '15%',
+      position: 'fixed', left: '50%', bottom: '12%',
       transform: 'translateX(-50%)',
-      padding: '16px 40px', fontSize: '18px',
+      padding: '14px 36px', fontSize: '17px',
       fontFamily: 'Jua, sans-serif', color: '#fff',
       background: 'linear-gradient(135deg, #3498db, #2980b9)',
       border: 'none', borderRadius: '30px',
       boxShadow: '0 4px 20px rgba(52,152,219,0.5)',
       cursor: 'pointer', zIndex: '600',
       opacity: '0', transition: 'opacity 0.4s',
+      WebkitTapHighlightColor: 'transparent',
+      touchAction: 'manipulation',
     });
     document.body.appendChild(lobbyBtn);
     setTimeout(() => { lobbyBtn.style.opacity = '1'; }, 1000);
-    lobbyBtn.addEventListener('click', () => {
+    const goToLobby = () => {
       lobbyBtn.remove();
       socket.off('game:state', this._onGameStateBound);
       socket.off('game:event', this._onGameEventBound);
       socket.off('game:end', this._onGameEndBound);
       socket.off('game:start', this._onGameStartBound);
       this.scene.start('LobbyScene', { roomCode: this.roomCode, myName: this.myName });
-    });
+    };
+    lobbyBtn.addEventListener('click', goToLobby);
+    lobbyBtn.addEventListener('touchend', (e) => { e.preventDefault(); goToLobby(); });
     this._lobbyBtn = lobbyBtn;
 
     this._spawnConfetti(W, H);

@@ -238,6 +238,28 @@
       to { transform: translateY(-40px) rotate(15deg); opacity: 0.1; }
     }
 
+    /* ===== LANDSCAPE RESPONSIVE ===== */
+    @media (orientation: landscape) and (max-height: 500px) {
+      #lobby-overlay { align-items: flex-start; padding-top: 8px; }
+      .lobby-panel { padding: 14px 18px; max-width: 380px; }
+      .lobby-title { font-size: 26px; margin-bottom: 0; }
+      .lobby-poodle { font-size: 18px; margin-bottom: 2px; }
+      .lobby-subtitle { font-size: 11px; margin-bottom: 10px; }
+      .lobby-input { padding: 9px 12px; font-size: 14px; margin-bottom: 8px; }
+      .lobby-btn { padding: 9px 6px; font-size: 13px; }
+      .lobby-btns { margin-bottom: 8px; gap: 8px; }
+      .char-label { font-size: 13px; margin-bottom: 6px; }
+      .char-grid { gap: 4px; margin-bottom: 8px; }
+      .char-card { padding: 6px 3px 4px; border-radius: 10px; }
+      .char-card .char-emoji { font-size: 20px; }
+      .char-card .char-name { font-size: 9px; margin-top: 2px; }
+      .room-divider { margin: 8px 0; }
+      .players-label { font-size: 12px; margin-bottom: 4px; }
+      .player-list { font-size: 13px; line-height: 1.5; margin-bottom: 8px; }
+      #lobby-status { font-size: 11px; margin-top: 6px; }
+      #dash-btn { width: 70px; height: 70px; right: 16px; bottom: 30px; font-size: 13px; }
+    }
+
     /* ===== ROTATE PHONE OVERLAY ===== */
     #rotate-overlay {
       display: none;
