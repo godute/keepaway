@@ -8,7 +8,7 @@ const RENDERER_MAP = {
   keepaway: KeepawayRenderer,
   tag: TagRenderer,
   sumo: SumoRenderer,
-  hot_potato: HotPotatoRenderer,
+  hotpotato: HotPotatoRenderer,
   territory: TerritoryRenderer,
 };
 
