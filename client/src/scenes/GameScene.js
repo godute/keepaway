@@ -28,6 +28,7 @@ export class GameScene extends Phaser.Scene {
   init(data) {
     this.roomCode = data.roomCode;
     this.myName = data.myName;
+    this._gameStartData = data.gameData || null;
   }
 
   create() {
@@ -199,6 +200,11 @@ export class GameScene extends Phaser.Scene {
     socket.on('game:state', this._onGameStateBound);
     socket.on('game:event', this._onGameEventBound);
     socket.on('game:end', this._onGameEndBound);
+
+    // Apply game:start data passed from LobbyScene (since the event already fired)
+    if (this._gameStartData) {
+      this._onGameStart(this._gameStartData);
+    }
   }
 
   update() {

@@ -64,9 +64,9 @@ export class LobbyScene extends Phaser.Scene {
 
     // Socket events
     this._roomUpdateHandler = (state) => this._onRoomUpdate(state);
-    this._gameStartHandler = () => {
+    this._gameStartHandler = (gameData) => {
       this._hideOverlay();
-      this.scene.start('GameScene', { roomCode: this.roomCode, myName: this.myName });
+      this.scene.start('GameScene', { roomCode: this.roomCode, myName: this.myName, gameData });
     };
     socket.on('room:update', this._roomUpdateHandler);
     socket.on('game:start', this._gameStartHandler);
