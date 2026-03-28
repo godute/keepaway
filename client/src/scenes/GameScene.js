@@ -253,113 +253,110 @@ export class GameScene extends Phaser.Scene {
       const cy = obs.y + obs.h / 2;
       const type = obs.type || 'tree';
 
-      // Shadow (stronger)
-      g.fillStyle(0x000000, 0.3);
-      g.fillEllipse(cx + 3, obs.y + obs.h + 5, obs.w * 0.9, 12);
+      // Bold shadow for all obstacles
+      g.fillStyle(0x000000, 0.4);
+      g.fillEllipse(cx + 3, obs.y + obs.h + 6, obs.w + 6, 14);
 
       if (type === 'tree') {
         // Trunk
-        g.fillStyle(0x6b4420, 0.95);
-        g.fillRoundedRect(cx - 8, cy, 16, obs.h / 2 + 4, 4);
-        // Canopy outline
-        g.lineStyle(2, 0x88dd88, 0.3);
-        g.strokeCircle(cx, cy - 6, obs.w / 2 + 4);
-        // Canopy layers (brighter)
-        g.fillStyle(0x3a9e3a, 0.9);
+        g.fillStyle(0x8b5e2a, 1);
+        g.fillRoundedRect(cx - 9, cy, 18, obs.h / 2 + 6, 4);
+        // Canopy glow ring
+        g.lineStyle(3, 0x66ff66, 0.25);
+        g.strokeCircle(cx, cy - 6, obs.w / 2 + 6);
+        // Main canopy (bright green, full opacity)
+        g.fillStyle(0x4cc44c, 1);
         g.fillCircle(cx, cy - 6, obs.w / 2 + 2);
-        g.fillStyle(0x4aaa4a, 0.8);
-        g.fillCircle(cx - 8, cy - 2, obs.w / 3);
-        g.fillCircle(cx + 8, cy - 2, obs.w / 3);
-        g.fillStyle(0x5abb5a, 0.6);
+        g.fillStyle(0x5dd55d, 0.9);
+        g.fillCircle(cx - 9, cy - 2, obs.w / 3);
+        g.fillCircle(cx + 9, cy - 2, obs.w / 3);
+        g.fillStyle(0x6ee66e, 0.7);
         g.fillCircle(cx, cy - 14, obs.w / 3);
-        // Highlights
-        g.fillStyle(0x77dd77, 0.5);
-        g.fillCircle(cx - 4, cy - 12, 7);
-        g.fillCircle(cx + 6, cy - 8, 5);
+        // Bright highlights
+        g.fillStyle(0x99ff99, 0.6);
+        g.fillCircle(cx - 5, cy - 14, 8);
+        g.fillCircle(cx + 7, cy - 9, 6);
 
       } else if (type === 'rock') {
-        // Outline
-        g.lineStyle(2, 0xaaaabb, 0.3);
-        g.strokeEllipse(cx, cy, obs.w + 4, obs.h + 4);
-        // Main rock body
-        g.fillStyle(0x888899, 0.95);
-        g.fillEllipse(cx, cy, obs.w, obs.h);
+        // Glow ring
+        g.lineStyle(3, 0xbbbbcc, 0.35);
+        g.strokeEllipse(cx, cy, obs.w + 8, obs.h + 8);
+        // Main body (bright gray)
+        g.fillStyle(0x99aaaa, 1);
+        g.fillEllipse(cx, cy, obs.w + 2, obs.h + 2);
         // Highlight
-        g.fillStyle(0xaaaabb, 0.5);
+        g.fillStyle(0xbbcccc, 0.7);
         g.fillEllipse(cx - 4, cy - 4, obs.w * 0.6, obs.h * 0.5);
-        // Crack detail
-        g.lineStyle(1, 0x555566, 0.4);
+        // Crack
+        g.lineStyle(1.5, 0x667777, 0.5);
         g.lineBetween(cx - 6, cy - 2, cx + 4, cy + 6);
-        // Small rock
-        g.fillStyle(0x777788, 0.8);
-        g.fillEllipse(cx + obs.w / 2 - 2, cy + obs.h / 3, 10, 8);
+        // Side rock
+        g.fillStyle(0x889999, 0.9);
+        g.fillEllipse(cx + obs.w / 2, cy + obs.h / 3, 12, 10);
 
       } else if (type === 'fence') {
-        // Outline
-        g.lineStyle(1.5, 0xbb9930, 0.4);
-        g.strokeRoundedRect(obs.x - 1, obs.y - 1, obs.w + 2, obs.h + 2, 4);
-        // Horizontal fence planks
-        g.fillStyle(0x9b7920, 0.9);
+        // Glow outline
+        g.lineStyle(3, 0xddaa44, 0.4);
+        g.strokeRoundedRect(obs.x - 2, obs.y - 2, obs.w + 4, obs.h + 4, 4);
+        // Main plank (bright brown)
+        g.fillStyle(0xbb8822, 1);
         g.fillRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
-        // Plank details
-        g.fillStyle(0xb08828, 0.6);
-        g.fillRoundedRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h / 2 - 2, 2);
-        // Posts
-        g.fillStyle(0x7b5f10, 0.95);
-        g.fillRoundedRect(obs.x + 4, obs.y - 6, 8, obs.h + 12, 2);
-        g.fillRoundedRect(obs.x + obs.w - 12, obs.y - 6, 8, obs.h + 12, 2);
-        // Nail dots
-        g.fillStyle(0x555555, 0.5);
-        g.fillCircle(obs.x + 8, cy, 2);
-        g.fillCircle(obs.x + obs.w - 8, cy, 2);
+        // Detail
+        g.fillStyle(0xcc9933, 0.7);
+        g.fillRoundedRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h / 2 - 1, 2);
+        // Posts (tall, dark)
+        g.fillStyle(0x8b6914, 1);
+        g.fillRoundedRect(obs.x + 4, obs.y - 8, 10, obs.h + 16, 3);
+        g.fillRoundedRect(obs.x + obs.w - 14, obs.y - 8, 10, obs.h + 16, 3);
+        // Nails
+        g.fillStyle(0x666666, 0.7);
+        g.fillCircle(obs.x + 9, cy, 2.5);
+        g.fillCircle(obs.x + obs.w - 9, cy, 2.5);
 
       } else if (type === 'pond') {
-        // Water outline
-        g.lineStyle(2, 0x66bbee, 0.3);
-        g.strokeEllipse(cx, cy, obs.w + 12, obs.h + 12);
-        // Water body
-        g.fillStyle(0x2266aa, 0.6);
-        g.fillEllipse(cx, cy, obs.w + 8, obs.h + 8);
-        g.fillStyle(0x3399dd, 0.7);
-        g.fillEllipse(cx, cy, obs.w, obs.h);
-        // Water highlight
-        g.fillStyle(0x66bbff, 0.45);
-        g.fillEllipse(cx - 8, cy - 6, obs.w * 0.5, obs.h * 0.3);
+        // Outer glow
+        g.lineStyle(3, 0x44aaff, 0.4);
+        g.strokeEllipse(cx, cy, obs.w + 14, obs.h + 14);
+        // Shore ring
+        g.fillStyle(0x886644, 0.5);
+        g.fillEllipse(cx, cy, obs.w + 10, obs.h + 10);
+        // Water
+        g.fillStyle(0x2288cc, 0.85);
+        g.fillEllipse(cx, cy, obs.w + 4, obs.h + 4);
+        g.fillStyle(0x44aaee, 0.8);
+        g.fillEllipse(cx, cy, obs.w - 6, obs.h - 6);
+        // Shine
+        g.fillStyle(0x88ddff, 0.5);
+        g.fillEllipse(cx - 8, cy - 8, obs.w * 0.4, obs.h * 0.25);
         // Ripple
-        g.lineStyle(1, 0x88ccff, 0.4);
-        g.strokeEllipse(cx + 6, cy + 4, 18, 10);
+        g.lineStyle(1.5, 0xaaddff, 0.5);
+        g.strokeEllipse(cx + 6, cy + 4, 20, 12);
         // Lily pad
-        g.fillStyle(0x44aa44, 0.7);
-        g.fillCircle(cx + 16, cy + 10, 7);
-        g.fillStyle(0x55cc55, 0.6);
-        g.fillCircle(cx + 16, cy + 10, 5);
-        // Small flower on lily
-        g.fillStyle(0xff88aa, 0.6);
-        g.fillCircle(cx + 16, cy + 9, 2.5);
-        // Reeds
-        g.lineStyle(2, 0x558833, 0.6);
-        g.lineBetween(cx - obs.w / 2 + 6, cy + obs.h / 2, cx - obs.w / 2 + 4, cy + obs.h / 2 - 18);
-        g.lineBetween(cx - obs.w / 2 + 12, cy + obs.h / 2, cx - obs.w / 2 + 14, cy + obs.h / 2 - 14);
+        g.fillStyle(0x55cc55, 0.8);
+        g.fillCircle(cx + 18, cy + 12, 8);
+        g.fillStyle(0xff99bb, 0.7);
+        g.fillCircle(cx + 18, cy + 11, 3);
 
       } else if (type === 'bush') {
-        // Outline
-        g.lineStyle(2, 0x66bb66, 0.3);
-        g.strokeEllipse(cx, cy, obs.w + 8, obs.h + 8);
-        // Bush body (brighter)
-        g.fillStyle(0x3a8a3a, 0.9);
+        // Glow ring
+        g.lineStyle(3, 0x55ee55, 0.3);
+        g.strokeEllipse(cx, cy, obs.w + 10, obs.h + 10);
+        // Main body (bright vibrant green)
+        g.fillStyle(0x44aa44, 1);
         g.fillEllipse(cx, cy, obs.w + 4, obs.h + 4);
-        g.fillStyle(0x4a9a4a, 0.8);
+        g.fillStyle(0x55bb55, 0.9);
         g.fillEllipse(cx - 6, cy - 2, obs.w * 0.6, obs.h * 0.7);
         g.fillEllipse(cx + 6, cy + 2, obs.w * 0.6, obs.h * 0.7);
-        // Leaves highlight
-        g.fillStyle(0x66cc66, 0.5);
-        g.fillCircle(cx - 4, cy - 6, 6);
-        g.fillCircle(cx + 8, cy - 4, 5);
-        // Berries (brighter)
-        g.fillStyle(0xee4444, 0.7);
-        g.fillCircle(cx + 10, cy + 4, 3);
-        g.fillCircle(cx - 8, cy + 6, 2.5);
-        g.fillCircle(cx + 2, cy + 8, 2);
+        // Bright highlights
+        g.fillStyle(0x88ee88, 0.6);
+        g.fillCircle(cx - 4, cy - 7, 7);
+        g.fillCircle(cx + 8, cy - 5, 6);
+        // Berries (bright red, very visible)
+        g.fillStyle(0xff3333, 0.9);
+        g.fillCircle(cx + 11, cy + 4, 4);
+        g.fillCircle(cx - 9, cy + 7, 3.5);
+        g.fillCircle(cx + 2, cy + 9, 3);
+        g.fillCircle(cx - 4, cy - 2, 2.5);
       }
     }
   }
@@ -691,23 +688,31 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setDepth(101).setAlpha(0);
     this.tweens.add({ targets: scoreText, alpha: 1, duration: 400, delay: 800 });
 
-    const btnContainer = this.add.container(W / 2, H / 2 + 160).setDepth(101).setAlpha(0);
-    const btnBg = this.add.graphics();
-    btnBg.fillStyle(0x3498db, 1);
-    btnBg.fillRoundedRect(-90, -20, 180, 40, 20);
-    btnContainer.add([btnBg, this.add.text(0, 0, '\ub85c\ube44\ub85c \ub3cc\uc544\uac00\uae30', {
-      fontSize: '16px', color: '#fff', fontFamily: 'Jua',
-    }).setOrigin(0.5)]);
-    btnContainer.setSize(180, 40);
-    btnContainer.setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => {
-        socket.off('game:state', this._onGameStateBound);
-        socket.off('game:event', this._onGameEventBound);
-        socket.off('game:end', this._onGameEndBound);
-        socket.off('game:start', this._onGameStartBound);
-        this.scene.start('LobbyScene', { roomCode: this.roomCode, myName: this.myName });
-      });
-    this.tweens.add({ targets: btnContainer, alpha: 1, duration: 400, delay: 1000 });
+    // HTML overlay button for reliable mobile tapping
+    const lobbyBtn = document.createElement('button');
+    lobbyBtn.textContent = '\ub85c\ube44\ub85c \ub3cc\uc544\uac00\uae30';
+    Object.assign(lobbyBtn.style, {
+      position: 'fixed', left: '50%', bottom: '15%',
+      transform: 'translateX(-50%)',
+      padding: '16px 40px', fontSize: '18px',
+      fontFamily: 'Jua, sans-serif', color: '#fff',
+      background: 'linear-gradient(135deg, #3498db, #2980b9)',
+      border: 'none', borderRadius: '30px',
+      boxShadow: '0 4px 20px rgba(52,152,219,0.5)',
+      cursor: 'pointer', zIndex: '600',
+      opacity: '0', transition: 'opacity 0.4s',
+    });
+    document.body.appendChild(lobbyBtn);
+    setTimeout(() => { lobbyBtn.style.opacity = '1'; }, 1000);
+    lobbyBtn.addEventListener('click', () => {
+      lobbyBtn.remove();
+      socket.off('game:state', this._onGameStateBound);
+      socket.off('game:event', this._onGameEventBound);
+      socket.off('game:end', this._onGameEndBound);
+      socket.off('game:start', this._onGameStartBound);
+      this.scene.start('LobbyScene', { roomCode: this.roomCode, myName: this.myName });
+    });
+    this._lobbyBtn = lobbyBtn;
 
     this._spawnConfetti(W, H);
   }
@@ -734,6 +739,7 @@ export class GameScene extends Phaser.Scene {
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
 
+    if (this._lobbyBtn) { this._lobbyBtn.remove(); this._lobbyBtn = null; }
     this.joystick?.destroy();
     for (const g of this.playerGraphics.values()) {
       g.container.destroy();
