@@ -62,21 +62,34 @@ export class TerritoryRenderer extends BaseRenderer {
       }
     }
 
-    // Apply full grid if provided (initial state or resync)
+    // Use server-provided grid dimensions if available
+    if (state.gridW && state.gridH) {
+      this._gridCols = state.gridW;
+      this._gridRows = state.gridH;
+    }
+    if (state.tileSize) {
+      this._tileSize = state.tileSize;
+    }
+
+    // Apply full grid if provided (RLE compressed: [[owner, count], ...])
     if (state.fullGrid) {
-      for (let r = 0; r < this._gridRows && r < state.fullGrid.length; r++) {
-        for (let c = 0; c < this._gridCols && c < state.fullGrid[r].length; c++) {
-          this._gridData[r][c] = state.fullGrid[r][c];
+      let idx = 0;
+      for (const [owner, count] of state.fullGrid) {
+        for (let i = 0; i < count && idx < this._gridCols * this._gridRows; i++, idx++) {
+          const r = Math.floor(idx / this._gridCols);
+          const c = idx % this._gridCols;
+          if (this._gridData[r]) this._gridData[r][c] = owner;
         }
       }
     }
 
-    // Apply incremental changed tiles
+    // Apply incremental changed tiles (server sends {x, y, owner} where x=col, y=row)
     if (state.changedTiles && state.changedTiles.length > 0) {
       for (const tile of state.changedTiles) {
-        const { row, col, owner } = tile;
+        const col = tile.x;
+        const row = tile.y;
         if (row >= 0 && row < this._gridRows && col >= 0 && col < this._gridCols) {
-          this._gridData[row][col] = owner;
+          if (this._gridData[row]) this._gridData[row][col] = tile.owner;
         }
       }
     }
