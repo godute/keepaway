@@ -33,6 +33,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    // --- Clean up stale state from previous game ---
+    // (constructor only runs once; on scene restart only init+create run)
+    this._cleanupPreviousGame();
+
     this.myId = socket.id;
     const W = this.mapWidth, H = this.mapHeight;
 
@@ -101,10 +105,61 @@ export class GameScene extends Phaser.Scene {
     socket.on('game:event', this._onGameEventBound);
     socket.on('game:end', this._onGameEndBound);
 
+    // Bind shutdown so it fires when the scene stops/restarts
+    this.events.once('shutdown', this.shutdown, this);
+
     // Apply game:start data passed from LobbyScene
     if (this._gameStartData) {
       this._onGameStart(this._gameStartData);
     }
+  }
+
+  _cleanupPreviousGame() {
+    // Destroy old player graphics
+    if (this.playerGraphics && this.playerGraphics.size > 0) {
+      for (const g of this.playerGraphics.values()) {
+        if (g.container) g.container.destroy();
+        if (g.nameText) g.nameText.destroy();
+        if (g.scoreBar) g.scoreBar.destroy();
+      }
+      this.playerGraphics.clear();
+    }
+    this.playerGraphics = new Map();
+
+    // Destroy old dash trails
+    if (this._dashTrails) {
+      this._dashTrails.forEach(t => { if (t && t.destroy) t.destroy(); });
+    }
+    this._dashTrails = [];
+
+    // Remove old renderer
+    if (this.renderer) {
+      this.renderer.destroy();
+      this.renderer = null;
+    }
+
+    // Remove old joystick
+    if (this.joystick) {
+      this.joystick.destroy();
+      this.joystick = null;
+    }
+
+    // Remove leftover lobby button from previous game end
+    if (this._lobbyBtn) {
+      this._lobbyBtn.remove();
+      this._lobbyBtn = null;
+    }
+
+    // Remove old socket listeners
+    if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
+    if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
+    if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
+    if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
+
+    // Reset state
+    this.gameState = null;
+    this.dashPending = false;
+    this._obstacles = [];
   }
 
   // --- Background ---

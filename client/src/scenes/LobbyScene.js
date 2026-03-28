@@ -23,6 +23,16 @@ export class LobbyScene extends Phaser.Scene {
   }
 
   create() {
+    // Clean up previous event listeners from prior lobby session
+    if (this._btnHandlers) {
+      for (const { el, handler } of this._btnHandlers) {
+        el.removeEventListener('click', handler);
+      }
+      this._btnHandlers = [];
+    }
+    if (this._roomUpdateHandler) socket.off('room:update', this._roomUpdateHandler);
+    if (this._gameStartHandler) socket.off('game:start', this._gameStartHandler);
+
     socket.connect();
     this.selectedCharacter = DEFAULT_CHARACTER;
     this.selectedGame = DEFAULT_GAME_MODE;
@@ -75,6 +85,9 @@ export class LobbyScene extends Phaser.Scene {
     };
     socket.on('room:update', this._roomUpdateHandler);
     socket.on('game:start', this._gameStartHandler);
+
+    // Bind shutdown for cleanup
+    this.events.once('shutdown', this.shutdown, this);
 
     // Show correct view
     this._showPreRoom();
