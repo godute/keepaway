@@ -10,17 +10,20 @@ const KNOCKBACK_FORCE = 350;    // px per second
 const KNOCKBACK_DURATION = 0.25; // seconds
 
 // Collar colors to distinguish players
+const { DEFAULT_CHARACTER, isValidCharacter } = require('./characters');
+
 const COLLAR_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f39c12',
   '#9b59b6', '#1abc9c', '#e91e63', '#ff5722',
 ];
 
 class Player {
-  constructor(id, name, index) {
+  constructor(id, name, index, characterId) {
     this.id = id;
     this.name = name || `Player ${index + 1}`;
     this.index = index;
     this.color = COLLAR_COLORS[index % COLLAR_COLORS.length];
+    this.characterId = isValidCharacter(characterId) ? characterId : DEFAULT_CHARACTER;
 
     this.x = 400 + Math.cos((index / 8) * Math.PI * 2) * 150;
     this.y = 300 + Math.sin((index / 8) * Math.PI * 2) * 150;
@@ -59,7 +62,9 @@ class Player {
       this.dx = 0;
       this.dy = 0;
     }
-    this.wantsDash = dash;
+    // Latch dash — only set true, never overwrite with false
+    // Cleared in update() after processing
+    if (dash) this.wantsDash = true;
   }
 
   applyKnockback(fromX, fromY) {
@@ -96,6 +101,7 @@ class Player {
           this.dashVy = this.dy * DASH_SPEED;
         }
       }
+      this.wantsDash = false;
 
       // Apply movement
       if (this.isDashing) {
@@ -155,11 +161,18 @@ class Player {
     }
   }
 
+  setCharacter(characterId) {
+    if (isValidCharacter(characterId)) {
+      this.characterId = characterId;
+    }
+  }
+
   serialize() {
     return {
       id: this.id,
       name: this.name,
       color: this.color,
+      characterId: this.characterId,
       x: Math.round(this.x),
       y: Math.round(this.y),
       radius: this.radius,

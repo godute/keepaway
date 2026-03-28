@@ -7,13 +7,24 @@ const SCORE_PER_SECOND = 1;
 const WIN_SCORE = 30;
 const BONE_RESPAWN_DELAY = 2.0;
 
-// Map obstacles (AABB: x, y, w, h)
+// Map obstacles (AABB: x, y, w, h, type)
 const OBSTACLES = [
-  { x: 120, y: 100, w: 60, h: 60 },   // top-left bush
-  { x: 620, y: 100, w: 60, h: 60 },   // top-right bush
-  { x: 120, y: 440, w: 60, h: 60 },   // bottom-left bush
-  { x: 620, y: 440, w: 60, h: 60 },   // bottom-right bush
-  { x: 370, y: 260, w: 60, h: 80 },   // center obstacle
+  // Corner trees
+  { x: 100, y: 80, w: 55, h: 55, type: 'tree' },
+  { x: 645, y: 80, w: 55, h: 55, type: 'tree' },
+  { x: 100, y: 465, w: 55, h: 55, type: 'tree' },
+  { x: 645, y: 465, w: 55, h: 55, type: 'tree' },
+  // Center pond
+  { x: 360, y: 255, w: 80, h: 80, type: 'pond' },
+  // Side rocks
+  { x: 250, y: 170, w: 45, h: 35, type: 'rock' },
+  { x: 510, y: 395, w: 45, h: 35, type: 'rock' },
+  // Fences
+  { x: 200, y: 360, w: 90, h: 20, type: 'fence' },
+  { x: 510, y: 220, w: 90, h: 20, type: 'fence' },
+  // Small bushes
+  { x: 350, y: 100, w: 40, h: 40, type: 'bush' },
+  { x: 410, y: 460, w: 40, h: 40, type: 'bush' },
 ];
 
 class GameRoom {
@@ -28,6 +39,7 @@ class GameRoom {
     this.boneOwner = null;
     this.boneVisible = true;
     this.boneRespawnTimer = 0;
+    this.boneDropCooldown = 0;
 
     this.phase = 'lobby';
     this.winner = null;
@@ -36,17 +48,24 @@ class GameRoom {
     this._lastTime = Date.now();
   }
 
-  addPlayer(socket, name) {
+  addPlayer(socket, name, characterId) {
     if (this.players.size >= 8) return false;
 
     const index = this.playerOrder.length;
-    const player = new Player(socket.id, name, index);
+    const player = new Player(socket.id, name, index, characterId);
     this.players.set(socket.id, player);
     this.playerOrder.push(socket.id);
 
     socket.join(this.code);
     this.io.to(this.code).emit('room:update', this._roomState());
     return true;
+  }
+
+  setPlayerCharacter(socketId, characterId) {
+    const player = this.players.get(socketId);
+    if (!player || this.phase !== 'lobby') return;
+    player.setCharacter(characterId);
+    this.io.to(this.code).emit('room:update', this._roomState());
   }
 
   removePlayer(socketId) {
@@ -83,6 +102,7 @@ class GameRoom {
     this.bone = this._randomBonePosition();
     this.boneOwner = null;
     this.boneVisible = true;
+    this.boneDropCooldown = 0;
 
     this.io.to(this.code).emit('game:start', {
       mapWidth: MAP_WIDTH,
@@ -120,8 +140,11 @@ class GameRoom {
       }
     }
 
+    // Bone drop cooldown
+    if (this.boneDropCooldown > 0) this.boneDropCooldown -= dt;
+
     // Bone pickup
-    if (this.boneVisible && !this.boneOwner) {
+    if (this.boneVisible && !this.boneOwner && this.boneDropCooldown <= 0) {
       for (const player of this.players.values()) {
         if (this._dist(player, this.bone) < BONE_PICKUP_RADIUS) {
           this.boneOwner = player.id;
@@ -176,12 +199,10 @@ class GameRoom {
     this.boneOwner = null;
     this.bone = { x: player.x, y: player.y };
     this.boneVisible = true;
+    this.boneDropCooldown = 0.5; // 0.5s before anyone can pick up
   }
 
   _endGame(winnerId) {
-    this.phase = 'ended';
-    this.winner = winnerId;
-
     if (this._interval) {
       clearInterval(this._interval);
       this._interval = null;
@@ -193,6 +214,11 @@ class GameRoom {
       winnerName: winnerPlayer ? winnerPlayer.name : null,
       scores: this._scoreList(),
     });
+
+    // Return to lobby so players can restart
+    this.phase = 'lobby';
+    this.winner = winnerId;
+    this.io.to(this.code).emit('room:update', this._roomState());
   }
 
   _randomBonePosition() {
@@ -224,7 +250,7 @@ class GameRoom {
   _gameState() {
     return {
       players: this.playerOrder.map(id => this.players.get(id).serialize()),
-      bone: this.boneVisible ? this.bone : null,
+      bone: (this.boneVisible && !this.boneOwner) ? this.bone : null,
       boneOwner: this.boneOwner,
       phase: this.phase,
     };
@@ -238,6 +264,7 @@ class GameRoom {
         id,
         name: this.players.get(id).name,
         color: this.players.get(id).color,
+        characterId: this.players.get(id).characterId,
       })),
     };
   }

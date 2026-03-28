@@ -47,12 +47,20 @@ class SocketClient {
     (this.listeners.get(event) || []).forEach(fn => fn(data));
   }
 
-  createRoom(name) {
-    return new Promise(resolve => this.socket.emit('room:create', { name }, resolve));
+  createRoom(name, characterId) {
+    return new Promise(resolve => this.socket.emit('room:create', { name, characterId }, resolve));
   }
 
-  joinRoom(code, name) {
-    return new Promise(resolve => this.socket.emit('room:join', { code, name }, resolve));
+  joinRoom(code, name, characterId) {
+    return new Promise(resolve => this.socket.emit('room:join', { code, name, characterId }, resolve));
+  }
+
+  selectCharacter(characterId) {
+    this.socket?.emit('player:character', { characterId });
+  }
+
+  rejoinRoom(code) {
+    return new Promise(resolve => this.socket.emit('room:rejoin', { code }, resolve));
   }
 
   startGame(code) {

@@ -32,9 +32,9 @@ io.on('connection', (socket) => {
   console.log(`[+] connected: ${socket.id}`);
 
   // Create a new room
-  socket.on('room:create', ({ name }, cb) => {
+  socket.on('room:create', ({ name, characterId }, cb) => {
     const room = roomManager.createRoom();
-    const ok = room.addPlayer(socket, name);
+    const ok = room.addPlayer(socket, name, characterId);
     if (ok) {
       cb({ ok: true, code: room.code, roomState: room._roomState() });
     } else {
@@ -43,14 +43,33 @@ io.on('connection', (socket) => {
   });
 
   // Join an existing room
-  socket.on('room:join', ({ code, name }, cb) => {
+  socket.on('room:join', ({ code, name, characterId }, cb) => {
     const room = roomManager.getRoom(code.toUpperCase());
     if (!room) return cb({ ok: false, error: 'Room not found' });
     if (room.players.size >= 8) return cb({ ok: false, error: 'Room is full' });
     if (room.phase !== 'lobby') return cb({ ok: false, error: 'Game already started' });
 
-    const ok = room.addPlayer(socket, name);
+    const ok = room.addPlayer(socket, name, characterId);
     cb({ ok, code: room.code, roomState: room._roomState() });
+  });
+
+  // Change character in lobby
+  socket.on('player:character', ({ characterId }) => {
+    for (const room of roomManager.rooms.values()) {
+      if (room.players.has(socket.id)) {
+        room.setPlayerCharacter(socket.id, characterId);
+        break;
+      }
+    }
+  });
+
+  // Rejoin room (request current state after returning from game)
+  socket.on('room:rejoin', ({ code }, cb) => {
+    const room = roomManager.getRoom(code);
+    if (!room || !room.players.has(socket.id)) {
+      return cb && cb({ ok: false, error: 'Room not found' });
+    }
+    cb && cb({ ok: true, roomState: room._roomState() });
   });
 
   // Host starts the game
