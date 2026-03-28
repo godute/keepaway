@@ -6,8 +6,8 @@ const DASH_DURATION = 0.18;     // seconds
 const DASH_COOLDOWN = 1.2;      // seconds
 const BONE_PICKUP_RADIUS = 40;  // distance to auto-pick up bone
 const DASH_HIT_RADIUS = 50;     // distance for dash-hit detection
-const KNOCKBACK_FORCE = 350;    // px per second
-const KNOCKBACK_DURATION = 0.25; // seconds
+const KNOCKBACK_FORCE = 500;    // px per second
+const KNOCKBACK_DURATION = 0.35; // seconds
 
 // Collar colors to distinguish players
 const { DEFAULT_CHARACTER, isValidCharacter } = require('./characters');

@@ -143,6 +143,20 @@ export class GameScene extends Phaser.Scene {
       fontSize: '12px', color: '#ffffff', fontFamily: 'Jua, Consolas, monospace', lineSpacing: 3,
     });
 
+    // Win condition badge
+    const winBadgeBg = this.add.graphics();
+    winBadgeBg.fillStyle(0x000000, 0.45);
+    winBadgeBg.fillRoundedRect(W / 2 - 75, 6, 150, 24, 8);
+    this.add.text(W / 2, 18, '\u{1F9B4} 30\uc810 \ub2ec\uc131 \uc2dc \uc2b9\ub9ac!', {
+      fontSize: '11px', color: '#ffd700', fontFamily: 'Jua, sans-serif',
+    }).setOrigin(0.5);
+
+    // Near-win warning text (hidden by default)
+    this._nearWinText = this.add.text(W / 2, 40, '', {
+      fontSize: '16px', color: '#ff4444', fontFamily: 'Jua, sans-serif',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setAlpha(0);
+
     const badgeBg = this.add.graphics();
     badgeBg.fillStyle(0x000000, 0.4);
     badgeBg.fillRoundedRect(W - 100, 6, 94, 26, 8);
@@ -171,6 +185,12 @@ export class GameScene extends Phaser.Scene {
     this.joystick.create(() => { this.dashPending = true; });
 
     // --- Socket listeners ---
+    // Defensive: remove any stale listeners from previous scene instance
+    if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
+    if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
+    if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
+    if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
+
     this._onGameStartBound = (data) => this._onGameStart(data);
     this._onGameStateBound = (state) => this._onGameState(state);
     this._onGameEventBound = (ev) => this._onGameEvent(ev);
@@ -233,94 +253,110 @@ export class GameScene extends Phaser.Scene {
       const cy = obs.y + obs.h / 2;
       const type = obs.type || 'tree';
 
-      // Shadow
-      g.fillStyle(0x000000, 0.18);
-      g.fillEllipse(cx + 3, obs.y + obs.h + 4, obs.w * 0.8, 10);
+      // Shadow (stronger)
+      g.fillStyle(0x000000, 0.3);
+      g.fillEllipse(cx + 3, obs.y + obs.h + 5, obs.w * 0.9, 12);
 
       if (type === 'tree') {
         // Trunk
-        g.fillStyle(0x5d3a1a, 0.9);
+        g.fillStyle(0x6b4420, 0.95);
         g.fillRoundedRect(cx - 8, cy, 16, obs.h / 2 + 4, 4);
-        // Canopy layers
-        g.fillStyle(0x2e7d32, 0.85);
+        // Canopy outline
+        g.lineStyle(2, 0x88dd88, 0.3);
+        g.strokeCircle(cx, cy - 6, obs.w / 2 + 4);
+        // Canopy layers (brighter)
+        g.fillStyle(0x3a9e3a, 0.9);
         g.fillCircle(cx, cy - 6, obs.w / 2 + 2);
-        g.fillStyle(0x3a9a3a, 0.7);
+        g.fillStyle(0x4aaa4a, 0.8);
         g.fillCircle(cx - 8, cy - 2, obs.w / 3);
         g.fillCircle(cx + 8, cy - 2, obs.w / 3);
-        g.fillStyle(0x4aaa4a, 0.5);
+        g.fillStyle(0x5abb5a, 0.6);
         g.fillCircle(cx, cy - 14, obs.w / 3);
-        // Highlight
-        g.fillStyle(0x66cc66, 0.3);
-        g.fillCircle(cx - 4, cy - 12, 6);
+        // Highlights
+        g.fillStyle(0x77dd77, 0.5);
+        g.fillCircle(cx - 4, cy - 12, 7);
+        g.fillCircle(cx + 6, cy - 8, 5);
 
       } else if (type === 'rock') {
+        // Outline
+        g.lineStyle(2, 0xaaaabb, 0.3);
+        g.strokeEllipse(cx, cy, obs.w + 4, obs.h + 4);
         // Main rock body
-        g.fillStyle(0x777788, 0.9);
+        g.fillStyle(0x888899, 0.95);
         g.fillEllipse(cx, cy, obs.w, obs.h);
         // Highlight
-        g.fillStyle(0x9999aa, 0.5);
+        g.fillStyle(0xaaaabb, 0.5);
         g.fillEllipse(cx - 4, cy - 4, obs.w * 0.6, obs.h * 0.5);
         // Crack detail
-        g.lineStyle(1, 0x555566, 0.3);
+        g.lineStyle(1, 0x555566, 0.4);
         g.lineBetween(cx - 6, cy - 2, cx + 4, cy + 6);
-        // Small rock next to it
-        g.fillStyle(0x666677, 0.7);
+        // Small rock
+        g.fillStyle(0x777788, 0.8);
         g.fillEllipse(cx + obs.w / 2 - 2, cy + obs.h / 3, 10, 8);
 
       } else if (type === 'fence') {
+        // Outline
+        g.lineStyle(1.5, 0xbb9930, 0.4);
+        g.strokeRoundedRect(obs.x - 1, obs.y - 1, obs.w + 2, obs.h + 2, 4);
         // Horizontal fence planks
-        g.fillStyle(0x8b6914, 0.85);
+        g.fillStyle(0x9b7920, 0.9);
         g.fillRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
         // Plank details
-        g.fillStyle(0xa07820, 0.5);
+        g.fillStyle(0xb08828, 0.6);
         g.fillRoundedRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h / 2 - 2, 2);
         // Posts
-        g.fillStyle(0x6b4f10, 0.9);
+        g.fillStyle(0x7b5f10, 0.95);
         g.fillRoundedRect(obs.x + 4, obs.y - 6, 8, obs.h + 12, 2);
         g.fillRoundedRect(obs.x + obs.w - 12, obs.y - 6, 8, obs.h + 12, 2);
         // Nail dots
-        g.fillStyle(0x444444, 0.4);
+        g.fillStyle(0x555555, 0.5);
         g.fillCircle(obs.x + 8, cy, 2);
         g.fillCircle(obs.x + obs.w - 8, cy, 2);
 
       } else if (type === 'pond') {
+        // Water outline
+        g.lineStyle(2, 0x66bbee, 0.3);
+        g.strokeEllipse(cx, cy, obs.w + 12, obs.h + 12);
         // Water body
-        g.fillStyle(0x2266aa, 0.5);
+        g.fillStyle(0x2266aa, 0.6);
         g.fillEllipse(cx, cy, obs.w + 8, obs.h + 8);
-        g.fillStyle(0x3388cc, 0.6);
+        g.fillStyle(0x3399dd, 0.7);
         g.fillEllipse(cx, cy, obs.w, obs.h);
         // Water highlight
-        g.fillStyle(0x55aaee, 0.4);
+        g.fillStyle(0x66bbff, 0.45);
         g.fillEllipse(cx - 8, cy - 6, obs.w * 0.5, obs.h * 0.3);
         // Ripple
-        g.lineStyle(1, 0x88ccff, 0.3);
+        g.lineStyle(1, 0x88ccff, 0.4);
         g.strokeEllipse(cx + 6, cy + 4, 18, 10);
         // Lily pad
-        g.fillStyle(0x338833, 0.6);
+        g.fillStyle(0x44aa44, 0.7);
         g.fillCircle(cx + 16, cy + 10, 7);
-        g.fillStyle(0x44aa44, 0.5);
+        g.fillStyle(0x55cc55, 0.6);
         g.fillCircle(cx + 16, cy + 10, 5);
         // Small flower on lily
-        g.fillStyle(0xff88aa, 0.5);
+        g.fillStyle(0xff88aa, 0.6);
         g.fillCircle(cx + 16, cy + 9, 2.5);
-        // Reeds on edge
-        g.lineStyle(2, 0x446633, 0.5);
+        // Reeds
+        g.lineStyle(2, 0x558833, 0.6);
         g.lineBetween(cx - obs.w / 2 + 6, cy + obs.h / 2, cx - obs.w / 2 + 4, cy + obs.h / 2 - 18);
         g.lineBetween(cx - obs.w / 2 + 12, cy + obs.h / 2, cx - obs.w / 2 + 14, cy + obs.h / 2 - 14);
 
       } else if (type === 'bush') {
-        // Bush body
-        g.fillStyle(0x2e6e2e, 0.85);
+        // Outline
+        g.lineStyle(2, 0x66bb66, 0.3);
+        g.strokeEllipse(cx, cy, obs.w + 8, obs.h + 8);
+        // Bush body (brighter)
+        g.fillStyle(0x3a8a3a, 0.9);
         g.fillEllipse(cx, cy, obs.w + 4, obs.h + 4);
-        g.fillStyle(0x3a8a3a, 0.7);
+        g.fillStyle(0x4a9a4a, 0.8);
         g.fillEllipse(cx - 6, cy - 2, obs.w * 0.6, obs.h * 0.7);
         g.fillEllipse(cx + 6, cy + 2, obs.w * 0.6, obs.h * 0.7);
         // Leaves highlight
-        g.fillStyle(0x55bb55, 0.4);
+        g.fillStyle(0x66cc66, 0.5);
         g.fillCircle(cx - 4, cy - 6, 6);
         g.fillCircle(cx + 8, cy - 4, 5);
-        // Berries
-        g.fillStyle(0xcc3333, 0.6);
+        // Berries (brighter)
+        g.fillStyle(0xee4444, 0.7);
         g.fillCircle(cx + 10, cy + 4, 3);
         g.fillCircle(cx - 8, cy + 6, 2.5);
         g.fillCircle(cx + 2, cy + 8, 2);
@@ -402,9 +438,18 @@ export class GameScene extends Phaser.Scene {
       const bone = p.hasBone ? ' \u{1F9B4}' : '';
       const me = p.id === this.myId ? ' \u25c0' : '';
       const medal = i === 0 ? '\u{1F947}' : i === 1 ? '\u{1F948}' : i === 2 ? '\u{1F949}' : '   ';
-      return `${medal} ${p.name}${bone}${me}  ${Math.floor(p.score)}`;
+      return `${medal} ${p.name}${bone}${me}  ${Math.floor(p.score)}/30`;
     });
     this.scoreboard.setText(lines.join('\n'));
+
+    // Near-win warning
+    if (sorted.length > 0 && sorted[0].score >= 20) {
+      const leader = sorted[0];
+      this._nearWinText.setText(`\u{1F525} ${leader.name} \uac70\uc758 \uc2b9\ub9ac! (${Math.floor(leader.score)}/30)`);
+      this._nearWinText.setAlpha(0.6 + Math.sin(Date.now() / 200) * 0.4);
+    } else {
+      this._nearWinText.setAlpha(0);
+    }
   }
 
   _createPlayerGraphic(p) {
@@ -534,7 +579,7 @@ export class GameScene extends Phaser.Scene {
     g.nameText.setPosition(tx, ty + p.radius + 14);
 
     // Score bar
-    const barW = 40, barH = 4;
+    const barW = 50, barH = 5;
     const pct = Math.min(p.score / 30, 1);
     g.scoreBar.clear();
     g.scoreBar.fillStyle(0x333333, 0.5);
@@ -683,6 +728,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown() {
+    // Remove socket listeners to prevent duplicates on restart
+    if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
+    if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
+    if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
+    if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
+
     this.joystick?.destroy();
     for (const g of this.playerGraphics.values()) {
       g.container.destroy();

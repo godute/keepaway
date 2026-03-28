@@ -169,7 +169,8 @@ class GameRoom {
       if (this._dist(attacker, victim) < DASH_HIT_RADIUS) {
         // Apply knockback to victim
         victim.applyKnockback(attacker.x, attacker.y);
-        this._dropBone(victim);
+        // Drop bone offset toward attacker so attacker can grab it
+        this._dropBoneToward(victim, attacker);
         this.io.to(this.code).emit('game:event', {
           type: 'bone_dropped',
           attackerId: attacker.id,
@@ -199,7 +200,21 @@ class GameRoom {
     this.boneOwner = null;
     this.bone = { x: player.x, y: player.y };
     this.boneVisible = true;
-    this.boneDropCooldown = 0.5; // 0.5s before anyone can pick up
+    this.boneDropCooldown = 0.5;
+  }
+
+  _dropBoneToward(victim, attacker) {
+    victim.hasBone = false;
+    this.boneOwner = null;
+    // Place bone 35px toward attacker from victim
+    const dx = attacker.x - victim.x;
+    const dy = attacker.y - victim.y;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const boneX = Math.max(30, Math.min(MAP_WIDTH - 30, victim.x + (dx / len) * 35));
+    const boneY = Math.max(30, Math.min(MAP_HEIGHT - 30, victim.y + (dy / len) * 35));
+    this.bone = { x: boneX, y: boneY };
+    this.boneVisible = true;
+    this.boneDropCooldown = 0.5;
   }
 
   _endGame(winnerId) {
