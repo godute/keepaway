@@ -25,8 +25,8 @@ class Player {
     this.color = COLLAR_COLORS[index % COLLAR_COLORS.length];
     this.characterId = isValidCharacter(characterId) ? characterId : DEFAULT_CHARACTER;
 
-    this.x = 400 + Math.cos((index / 8) * Math.PI * 2) * 150;
-    this.y = 300 + Math.sin((index / 8) * Math.PI * 2) * 150;
+    this.x = 480 + Math.cos((index / 8) * Math.PI * 2) * 180;
+    this.y = 270 + Math.sin((index / 8) * Math.PI * 2) * 150;
     this.radius = PLAYER_RADIUS;
 
     this.vx = 0;

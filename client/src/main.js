@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { LobbyScene } from './scenes/LobbyScene.js';
 import { GameScene } from './scenes/GameScene.js';
 
-const MAP_WIDTH = 800;
-const MAP_HEIGHT = 600;
+const MAP_WIDTH = 960;
+const MAP_HEIGHT = 540;
 
 const config = {
   type: Phaser.AUTO,

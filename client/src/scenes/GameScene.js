@@ -4,7 +4,7 @@ import { JoystickControl } from '../ui/JoystickControl.js';
 import sound from '../audio/SoundManager.js';
 import { CHARACTERS, DEFAULT_CHARACTER } from '../characters.js';
 
-const LERP = 0.3;
+const LERP = 0.45;
 const DASH_COOLDOWN_MAX = 1.2; // must match server
 
 export class GameScene extends Phaser.Scene {
@@ -16,8 +16,8 @@ export class GameScene extends Phaser.Scene {
     this.gameState = null;
     this.joystick = null;
     this.dashPending = false;
-    this.mapWidth = 800;
-    this.mapHeight = 600;
+    this.mapWidth = 960;
+    this.mapHeight = 540;
     this.myId = null;
     this.roomCode = null;
     this._dashTrails = [];

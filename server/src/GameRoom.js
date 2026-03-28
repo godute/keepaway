@@ -1,7 +1,7 @@
 const { Player, BONE_PICKUP_RADIUS, DASH_HIT_RADIUS } = require('./Player');
 
-const MAP_WIDTH = 800;
-const MAP_HEIGHT = 600;
+const MAP_WIDTH = 960;
+const MAP_HEIGHT = 540;
 const TICK_RATE = 60;
 const SCORE_PER_SECOND = 1;
 const WIN_SCORE = 30;
@@ -10,21 +10,24 @@ const BONE_RESPAWN_DELAY = 2.0;
 // Map obstacles (AABB: x, y, w, h, type)
 const OBSTACLES = [
   // Corner trees
-  { x: 100, y: 80, w: 55, h: 55, type: 'tree' },
-  { x: 645, y: 80, w: 55, h: 55, type: 'tree' },
-  { x: 100, y: 465, w: 55, h: 55, type: 'tree' },
-  { x: 645, y: 465, w: 55, h: 55, type: 'tree' },
+  { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
+  { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
+  { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
+  { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
   // Center pond
-  { x: 360, y: 255, w: 80, h: 80, type: 'pond' },
+  { x: 440, y: 230, w: 80, h: 80, type: 'pond' },
   // Side rocks
-  { x: 250, y: 170, w: 45, h: 35, type: 'rock' },
-  { x: 510, y: 395, w: 45, h: 35, type: 'rock' },
+  { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
+  { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
   // Fences
-  { x: 200, y: 360, w: 90, h: 20, type: 'fence' },
-  { x: 510, y: 220, w: 90, h: 20, type: 'fence' },
+  { x: 220, y: 330, w: 90, h: 20, type: 'fence' },
+  { x: 650, y: 190, w: 90, h: 20, type: 'fence' },
   // Small bushes
-  { x: 350, y: 100, w: 40, h: 40, type: 'bush' },
-  { x: 410, y: 460, w: 40, h: 40, type: 'bush' },
+  { x: 420, y: 80, w: 40, h: 40, type: 'bush' },
+  { x: 500, y: 420, w: 40, h: 40, type: 'bush' },
+  // Extra obstacles for wider map
+  { x: 180, y: 230, w: 40, h: 40, type: 'bush' },
+  { x: 740, y: 280, w: 45, h: 35, type: 'rock' },
 ];
 
 class GameRoom {
@@ -95,12 +98,12 @@ class GameRoom {
       const p = this.players.get(id);
       p.score = 0;
       p.hasBone = false;
-      p.x = 400 + Math.cos((idx / this.players.size) * Math.PI * 2) * 150;
-      p.y = 300 + Math.sin((idx / this.players.size) * Math.PI * 2) * 150;
+      p.x = MAP_WIDTH / 2 + Math.cos((idx / this.players.size) * Math.PI * 2) * 180;
+      p.y = MAP_HEIGHT / 2 + Math.sin((idx / this.players.size) * Math.PI * 2) * 150;
     });
 
-    // Spawn bone at safe center position (avoid pond at 360-440, 255-335)
-    this.bone = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 - 80 };
+    // Spawn bone at safe position (avoid pond at 440-520, 230-310)
+    this.bone = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 - 60 };
     this.boneOwner = null;
     this.boneVisible = true;
     this.boneDropCooldown = 1.5; // Grace period: nobody can pick up for 1.5s
