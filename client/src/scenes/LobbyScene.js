@@ -53,10 +53,8 @@ export class LobbyScene extends Phaser.Scene {
     this._charGrid = document.getElementById('char-grid');
     this._gameGrid = document.getElementById('game-grid');
 
-    // Show lobby overlay, hide Phaser canvas
+    // Show lobby overlay (overlay covers canvas via z-index, no need to hide canvas)
     this._overlay.classList.remove('hidden');
-    const canvas = this.game.canvas;
-    if (canvas) canvas.style.display = 'none';
 
     // Build grids
     this._buildCharGrid();
@@ -189,8 +187,6 @@ export class LobbyScene extends Phaser.Scene {
 
   _hideOverlay() {
     this._overlay.classList.add('hidden');
-    const canvas = this.game.canvas;
-    if (canvas) canvas.style.display = '';
   }
 
   // --- Button binding helper ---

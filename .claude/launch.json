@@ -2,11 +2,17 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "client",
+      "name": "keepaway-client",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "cwd": "${workspaceFolder}/client",
       "port": 5173
+    },
+    {
+      "name": "keepaway-server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/src/index.js"],
+      "port": 3001
     }
   ]
 }
