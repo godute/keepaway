@@ -238,6 +238,40 @@
       to { transform: translateY(-40px) rotate(15deg); opacity: 0.1; }
     }
 
+    /* ===== ROTATE PHONE OVERLAY ===== */
+    #rotate-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15, 12, 41, 0.97);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #fff;
+      font-family: 'Jua', sans-serif;
+      text-align: center;
+    }
+    #rotate-overlay .rotate-icon {
+      font-size: 80px;
+      animation: rotatePhone 1.5s ease-in-out infinite alternate;
+      margin-bottom: 20px;
+    }
+    #rotate-overlay .rotate-text {
+      font-size: 20px;
+      color: #ffd700;
+    }
+    #rotate-overlay .rotate-sub {
+      font-size: 14px;
+      color: #8888aa;
+      margin-top: 8px;
+    }
+    @keyframes rotatePhone {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(90deg); }
+    }
+    @media (orientation: portrait) and (max-width: 900px) {
+      #rotate-overlay { display: flex; }
+    }
+
     /* ===== DASH BUTTON ===== */
     #dash-btn {
       position: fixed;
@@ -267,6 +301,13 @@
 </head>
 <body>
   <div id="game-container"></div>
+
+  <!-- ===== ROTATE PHONE OVERLAY ===== -->
+  <div id="rotate-overlay">
+    <div class="rotate-icon">📱</div>
+    <div class="rotate-text">폰을 가로로 돌려주세요!</div>
+    <div class="rotate-sub">가로 모드에서 플레이할 수 있습니다</div>
+  </div>
 
   <!-- ===== LOBBY OVERLAY ===== -->
   <div id="lobby-overlay">
@@ -327,5 +368,13 @@
   </div>
 
   <script type="module" src="/src/main.js"></script>
+  <script>
+    // Try to lock orientation to landscape on mobile
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch(e) {}
+  </script>
 </body>
 </html>
