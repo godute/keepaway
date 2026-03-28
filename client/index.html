@@ -268,7 +268,7 @@
       #dash-btn { width: 70px; height: 70px; right: 16px; bottom: 30px; font-size: 13px; }
     }
 
-    /* ===== ROTATE PHONE OVERLAY ===== */
+    /* ===== ROTATE PHONE OVERLAY (game only, not lobby) ===== */
     #rotate-overlay {
       display: none;
       position: fixed; inset: 0;
@@ -294,12 +294,17 @@
       color: #8888aa;
       margin-top: 8px;
     }
+    #rotate-overlay .rotate-install {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      border: none; border-radius: 25px;
+      color: #fff; font-family: 'Jua', sans-serif; font-size: 15px;
+      cursor: pointer; display: none;
+    }
     @keyframes rotatePhone {
       from { transform: rotate(0deg); }
       to { transform: rotate(90deg); }
-    }
-    @media (orientation: portrait) and (max-width: 900px) {
-      #rotate-overlay { display: flex; }
     }
 
     /* ===== DASH BUTTON ===== */
@@ -332,11 +337,12 @@
 <body>
   <div id="game-container"></div>
 
-  <!-- ===== ROTATE PHONE OVERLAY ===== -->
+  <!-- ===== ROTATE PHONE OVERLAY (shown during game in portrait) ===== -->
   <div id="rotate-overlay">
     <div class="rotate-icon">📱</div>
     <div class="rotate-text">폰을 가로로 돌려주세요!</div>
     <div class="rotate-sub">가로 모드에서 플레이할 수 있습니다</div>
+    <button class="rotate-install" id="rotate-install-btn">📲 앱으로 설치하면 자동 가로!</button>
   </div>
 
   <!-- ===== LOBBY OVERLAY ===== -->
@@ -410,6 +416,38 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
+
+    // PWA install prompt
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('rotate-install-btn');
+      if (installBtn) installBtn.style.display = 'block';
+    });
+    document.getElementById('rotate-install-btn')?.addEventListener('click', () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+      }
+    });
+
+    // Show rotate overlay only during game (when lobby is hidden)
+    const rotateOverlay = document.getElementById('rotate-overlay');
+    function checkRotate() {
+      const lobbyHidden = document.getElementById('lobby-overlay')?.classList.contains('hidden');
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const isMobile = window.innerWidth < 900 || window.innerHeight < 900;
+      if (lobbyHidden && isPortrait && isMobile) {
+        rotateOverlay.style.display = 'flex';
+      } else {
+        rotateOverlay.style.display = 'none';
+      }
+    }
+    window.addEventListener('resize', checkRotate);
+    window.addEventListener('orientationchange', () => setTimeout(checkRotate, 200));
+    // Check periodically (lobby state changes)
+    setInterval(checkRotate, 1000);
   </script>
 </body>
 </html>
