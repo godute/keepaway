@@ -56,6 +56,9 @@ class Player {
     this.isIt = false;        // Tag
     this.hasBomb = false;     // Hot Potato
     this.isEliminated = false; // Hot Potato, Sumo
+
+    // Lobby
+    this.isReady = false;
   }
 
   /** Reset game-specific state for new round */

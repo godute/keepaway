@@ -5,7 +5,7 @@ import sound from '../audio/SoundManager.js';
 import { CHARACTERS, DEFAULT_CHARACTER } from '../characters.js';
 import { createRenderer } from '../renderers/index.js';
 
-const LERP = 0.45;
+const LERP = 0.7;
 const DASH_COOLDOWN_MAX = 1.2;
 
 export class GameScene extends Phaser.Scene {
@@ -115,12 +115,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   _cleanupPreviousGame() {
-    // Destroy old player graphics
+    // Destroy old player graphics (with safety for already-destroyed objects)
     if (this.playerGraphics && this.playerGraphics.size > 0) {
       for (const g of this.playerGraphics.values()) {
-        if (g.container) g.container.destroy();
-        if (g.nameText) g.nameText.destroy();
-        if (g.scoreBar) g.scoreBar.destroy();
+        try { if (g.container && g.container.scene) g.container.destroy(); } catch (e) {}
+        try { if (g.nameText && g.nameText.scene) g.nameText.destroy(); } catch (e) {}
+        try { if (g.scoreBar && g.scoreBar.scene) g.scoreBar.destroy(); } catch (e) {}
       }
       this.playerGraphics.clear();
     }
@@ -128,19 +128,19 @@ export class GameScene extends Phaser.Scene {
 
     // Destroy old dash trails
     if (this._dashTrails) {
-      this._dashTrails.forEach(t => { if (t && t.destroy) t.destroy(); });
+      this._dashTrails.forEach(t => { try { if (t && t.scene) t.destroy(); } catch (e) {} });
     }
     this._dashTrails = [];
 
     // Remove old renderer
     if (this.renderer) {
-      this.renderer.destroy();
+      try { this.renderer.destroy(); } catch (e) {}
       this.renderer = null;
     }
 
     // Remove old joystick
     if (this.joystick) {
-      this.joystick.destroy();
+      try { this.joystick.destroy(); } catch (e) {}
       this.joystick = null;
     }
 
@@ -524,7 +524,7 @@ export class GameScene extends Phaser.Scene {
     mouthBone.setVisible(false);
     parts.push(mouthBone);
 
-    const container = this.add.container(p.x, p.y, parts);
+    const container = this.add.container(p.x, p.y, parts).setDepth(10);
 
     if (isMe) {
       const arrow = this.add.text(0, -R - 22, '\u25bc', {
@@ -534,13 +534,13 @@ export class GameScene extends Phaser.Scene {
       container.add(arrow);
     }
 
-    const nameTag = this.add.container(p.x, p.y + R + 14);
+    const nameTag = this.add.container(p.x, p.y + R + 16).setDepth(10);
     nameTag.add(this.add.text(0, 0, p.name, {
-      fontSize: '11px', color: '#ffffff', fontFamily: 'Jua, sans-serif',
-      stroke: '#000000', strokeThickness: 2,
+      fontSize: '14px', color: '#ffffff', fontFamily: 'Jua, sans-serif',
+      stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5));
 
-    const scoreBar = this.add.graphics();
+    const scoreBar = this.add.graphics().setDepth(10);
 
     this.playerGraphics.set(p.id, {
       container, nameText: nameTag, scoreBar,
@@ -557,7 +557,7 @@ export class GameScene extends Phaser.Scene {
     const ty = Phaser.Math.Linear(g.container.y, p.y, LERP);
 
     g.container.setPosition(tx, ty);
-    g.nameText.setPosition(tx, ty + p.radius + 14);
+    g.nameText.setPosition(tx, ty + p.radius + 16);
 
     // Let renderer draw score bars (or use default)
     if (this.renderer?.drawPlayerScoreBar) {
@@ -567,10 +567,10 @@ export class GameScene extends Phaser.Scene {
       const pct = Math.min(p.score / 30, 1);
       g.scoreBar.clear();
       g.scoreBar.fillStyle(0x333333, 0.5);
-      g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 24, barW, barH, 2);
+      g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 30, barW, barH, 2);
       if (pct > 0) {
         g.scoreBar.fillStyle(0xffd700, 0.9);
-        g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 24, barW * pct, barH, 2);
+        g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 30, barW * pct, barH, 2);
       }
     }
 
@@ -587,10 +587,34 @@ export class GameScene extends Phaser.Scene {
       g.container.setScale(1.12);
       g.container.setAlpha(1);
       this._spawnDashTrail(tx, ty, g.colInt);
+    } else if (p.hasBone) {
+      // Bone holder: golden glow + pulsing scale
+      g.body.setFillStyle(0xffe070);
+      const pulse = 1.05 + Math.sin(Date.now() / 150) * 0.07;
+      g.container.setScale(pulse);
+      g.container.setAlpha(1);
+      // Draw glow ring around bone holder
+      this._cooldownGraphic.lineStyle(3, 0xffd700, 0.5 + Math.sin(Date.now() / 200) * 0.3);
+      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 12);
+    } else if (p.hasBomb) {
+      // Bomb holder: red pulsing
+      g.body.setFillStyle(0xff4444);
+      const pulse = 1.0 + Math.sin(Date.now() / 100) * 0.08;
+      g.container.setScale(pulse);
+      g.container.setAlpha(1);
+      this._cooldownGraphic.lineStyle(3, 0xff0000, 0.4 + Math.sin(Date.now() / 150) * 0.3);
+      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 12);
+    } else if (p.isIt) {
+      // Tag "it" player: red outline
+      g.body.setFillStyle(g.bodyColor);
+      g.container.setScale(1);
+      g.container.setAlpha(1);
+      this._cooldownGraphic.lineStyle(3, 0xff4444, 0.6);
+      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 10);
     } else {
       g.container.setScale(1);
       g.container.setAlpha(1);
-      g.body.setFillStyle(p.hasBone ? 0xffe070 : p.hasBomb ? 0xff4444 : g.bodyColor);
+      g.body.setFillStyle(g.bodyColor);
     }
 
     // Bone in mouth
@@ -628,11 +652,15 @@ export class GameScene extends Phaser.Scene {
 
   _onGameEnd(data) {
     sound.win();
-    this.joystick?.destroy();
+    if (this.joystick) {
+      this.joystick.destroy();
+      this.joystick = null;
+    }
 
     // Cleanup renderer
     if (this.renderer) {
       this.renderer.destroy();
+      this.renderer = null;
     }
 
     const W = this.mapWidth, H = this.mapHeight;
@@ -716,15 +744,15 @@ export class GameScene extends Phaser.Scene {
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
 
     if (this._lobbyBtn) { this._lobbyBtn.remove(); this._lobbyBtn = null; }
-    if (this.renderer) { this.renderer.destroy(); this.renderer = null; }
-    this.joystick?.destroy();
+    if (this.renderer) { try { this.renderer.destroy(); } catch (e) {} this.renderer = null; }
+    if (this.joystick) { try { this.joystick.destroy(); } catch (e) {} this.joystick = null; }
     for (const g of this.playerGraphics.values()) {
-      g.container.destroy();
-      g.nameText.destroy();
-      g.scoreBar?.destroy();
+      try { g.container?.destroy(); } catch (e) {}
+      try { g.nameText?.destroy(); } catch (e) {}
+      try { g.scoreBar?.destroy(); } catch (e) {}
     }
     this.playerGraphics.clear();
-    this._dashTrails.forEach(t => t.destroy());
+    this._dashTrails.forEach(t => { try { t?.destroy(); } catch (e) {} });
     this._dashTrails = [];
   }
 }

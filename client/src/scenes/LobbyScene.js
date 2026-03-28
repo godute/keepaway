@@ -68,6 +68,7 @@ export class LobbyScene extends Phaser.Scene {
     this._bindBtn('btn-confirm-join', () => this._joinRoom());
     this._bindBtn('btn-back', () => this._leaveRoom());
     this._bindBtn('btn-start', () => this._startGame());
+    this._bindBtn('btn-ready', () => this._toggleReady());
 
     // Enter key on inputs
     this._nameInput.addEventListener('keydown', (e) => {
@@ -248,6 +249,10 @@ export class LobbyScene extends Phaser.Scene {
     socket.connect();
   }
 
+  _toggleReady() {
+    socket.toggleReady();
+  }
+
   async _startGame() {
     const res = await socket.startGame(this.roomCode);
     if (res && !res.ok) {
@@ -276,27 +281,55 @@ export class LobbyScene extends Phaser.Scene {
 
     const listHtml = state.players.map((p, i) => {
       const crown = i === 0 ? '👑 ' : '';
+      const ready = i === 0 ? '' : (p.isReady ? ' ✅' : ' ⬜');
       const charEmoji = CHARACTERS[p.characterId]?.emoji || '🐾';
-      return `${crown}${charEmoji} ${p.name}`;
+      return `${crown}${charEmoji} ${p.name}${ready}`;
     }).join('<br>');
     this._playerList.innerHTML = listHtml;
+
+    // Check if all non-host players are ready
+    const nonHost = state.players.slice(1);
+    const allReady = nonHost.length > 0 && nonHost.every(p => p.isReady);
+    const readyCount = nonHost.filter(p => p.isReady).length;
 
     // Update start button text with game name
     if (gameMode) {
       this._startBtn.textContent = `▶  ${gameMode.nameKo} 시작`;
     }
 
-    if (isHost && state.players.length >= 2) {
-      this._startBtn.style.display = 'block';
-      this._waitText.style.display = 'none';
+    const readyBtn = document.getElementById('btn-ready');
+
+    if (isHost) {
+      if (readyBtn) readyBtn.style.display = 'none';
+      if (state.players.length >= 2 && allReady) {
+        this._startBtn.style.display = 'block';
+        this._waitText.style.display = 'none';
+      } else {
+        this._startBtn.style.display = 'none';
+        this._waitText.style.display = 'block';
+        if (state.players.length < 2) {
+          this._waitText.textContent = '플레이어를 기다리는 중...';
+        } else {
+          this._waitText.textContent = `준비 대기 중... (${readyCount}/${nonHost.length})`;
+        }
+      }
     } else {
       this._startBtn.style.display = 'none';
-      this._waitText.style.display = 'block';
-      if (!isHost) {
-        this._waitText.textContent = gameName
-          ? `${gameName} — 호스트가 시작할 때까지 기다려주세요...`
-          : '호스트가 게임을 시작할 때까지 기다려주세요...';
+      if (readyBtn) {
+        readyBtn.style.display = 'block';
+        const myState = state.players.find(p => p.id === socket.id);
+        if (myState?.isReady) {
+          readyBtn.textContent = '✅ 준비 완료!';
+          readyBtn.className = 'lobby-btn green';
+        } else {
+          readyBtn.textContent = '준비';
+          readyBtn.className = 'lobby-btn orange';
+        }
       }
+      this._waitText.style.display = 'block';
+      this._waitText.textContent = gameName
+        ? `${gameName} — 호스트가 시작할 때까지 기다려주세요...`
+        : '호스트가 게임을 시작할 때까지 기다려주세요...';
     }
   }
 

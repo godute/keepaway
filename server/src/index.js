@@ -72,6 +72,16 @@ io.on('connection', (socket) => {
     cb && cb({ ok: true });
   });
 
+  // Toggle ready state
+  socket.on('player:ready', () => {
+    for (const room of roomManager.rooms.values()) {
+      if (room.players.has(socket.id)) {
+        room.toggleReady(socket.id);
+        break;
+      }
+    }
+  });
+
   // Rejoin room (request current state after returning from game)
   socket.on('room:rejoin', ({ code }, cb) => {
     const room = roomManager.getRoom(code);
@@ -91,7 +101,10 @@ io.on('connection', (socket) => {
       return cb && cb({ ok: false, error: 'Only the host can start' });
     }
 
-    room.startGame();
+    const result = room.startGame();
+    if (result === 'not_ready') {
+      return cb && cb({ ok: false, error: '모든 플레이어가 준비되지 않았습니다' });
+    }
     cb && cb({ ok: true });
   });
 

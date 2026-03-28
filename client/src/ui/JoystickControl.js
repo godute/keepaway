@@ -59,9 +59,13 @@ export class JoystickControl {
   }
 
   destroy() {
-    if (this._joystick) this._joystick.destroy();
+    if (this._joystick) {
+      try { this._joystick.destroy(); } catch (e) { /* already destroyed */ }
+      this._joystick = null;
+    }
     document.getElementById('joystick-zone')?.remove();
     document.getElementById('dash-btn')?.remove();
+    this._onDash = null;
     this.dx = 0;
     this.dy = 0;
   }

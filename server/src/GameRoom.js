@@ -50,6 +50,13 @@ class GameRoom {
     this.io.to(this.code).emit('room:update', this._roomState());
   }
 
+  toggleReady(socketId) {
+    const player = this.players.get(socketId);
+    if (!player || this.phase !== 'lobby') return;
+    player.isReady = !player.isReady;
+    this.io.to(this.code).emit('room:update', this._roomState());
+  }
+
   removePlayer(socketId) {
     const player = this.players.get(socketId);
     if (!player) return;
@@ -74,6 +81,14 @@ class GameRoom {
   startGame() {
     if (this.phase !== 'lobby') return;
     if (this.players.size < 2) return;
+
+    // Check all non-host players are ready
+    const nonHostIds = this.playerOrder.slice(1);
+    const allReady = nonHostIds.every(id => {
+      const p = this.players.get(id);
+      return p && p.isReady;
+    });
+    if (nonHostIds.length > 0 && !allReady) return 'not_ready';
 
     this.phase = 'playing';
     this.winner = null;
@@ -174,6 +189,12 @@ class GameRoom {
     this.phase = 'lobby';
     this.winner = winnerId;
     this.gameMode = null;
+
+    // Reset ready state for next game
+    for (const p of this.players.values()) {
+      p.isReady = false;
+    }
+
     this.io.to(this.code).emit('room:update', this._roomState());
   }
 
@@ -201,7 +222,7 @@ class GameRoom {
       selectedGameType: this.selectedGameType,
       players: this.playerOrder.map(id => {
         const p = this.players.get(id);
-        return p ? { id, name: p.name, color: p.color, characterId: p.characterId } : null;
+        return p ? { id, name: p.name, color: p.color, characterId: p.characterId, isReady: p.isReady } : null;
       }).filter(Boolean),
     };
   }

@@ -63,6 +63,10 @@ class SocketClient {
     return new Promise(resolve => this.socket.emit('room:selectGame', { code, gameType }, resolve));
   }
 
+  toggleReady() {
+    this.socket?.emit('player:ready');
+  }
+
   rejoinRoom(code) {
     return new Promise(resolve => this.socket.emit('room:rejoin', { code }, resolve));
   }
