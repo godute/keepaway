@@ -99,8 +99,8 @@ class GameRoom {
       p.y = 300 + Math.sin((idx / this.players.size) * Math.PI * 2) * 150;
     });
 
-    // Spawn bone at center — away from all players (radius 150 circle)
-    this.bone = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
+    // Spawn bone at safe center position (avoid pond at 360-440, 255-335)
+    this.bone = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 - 80 };
     this.boneOwner = null;
     this.boneVisible = true;
     this.boneDropCooldown = 1.5; // Grace period: nobody can pick up for 1.5s

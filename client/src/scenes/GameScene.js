@@ -122,10 +122,10 @@ export class GameScene extends Phaser.Scene {
     this._obstacleGraphics = this.add.graphics().setDepth(15);
 
     // --- Bone ---
-    this.boneGlow = this.add.circle(0, 0, 30, 0xffd700, 0.15);
+    this.boneGlow = this.add.circle(0, 0, 30, 0xffd700, 0.15).setDepth(20);
     this.tweens.add({ targets: this.boneGlow, scaleX: 1.4, scaleY: 1.4, alpha: 0.05, yoyo: true, repeat: -1, duration: 800, ease: 'Sine.easeInOut' });
 
-    this.boneGraphic = this.add.container(0, 0);
+    this.boneGraphic = this.add.container(0, 0).setDepth(20);
     const boneL = this.add.circle(-8, 0, 7, 0xfff8dc);
     const boneR = this.add.circle(8, 0, 7, 0xfff8dc);
     const boneM = this.add.rectangle(0, 0, 16, 8, 0xfff8dc).setOrigin(0.5);
