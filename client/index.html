@@ -202,7 +202,7 @@
     }
     .game-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 6px;
       margin-bottom: 14px;
     }
@@ -283,6 +283,89 @@
       from { transform: translateY(0) rotate(0deg); opacity: 0.04; }
       to { transform: translateY(-40px) rotate(15deg); opacity: 0.1; }
     }
+
+    /* ===== EMOJI BAR ===== */
+    .emoji-bar {
+      position: fixed; bottom: 38%; left: 50%; transform: translateX(-50%);
+      z-index: 400; display: flex; align-items: center; gap: 4px;
+    }
+    .emoji-bar.collapsed .emoji-row { display: none; }
+    .emoji-toggle {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.2);
+      font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    .emoji-row {
+      display: flex; gap: 4px; background: rgba(0,0,0,0.5); border-radius: 24px; padding: 4px 6px;
+    }
+    .emoji-btn {
+      width: 36px; height: 36px; border: none; background: rgba(255,255,255,0.1);
+      border-radius: 50%; font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    .emoji-btn:active { background: rgba(255,255,255,0.3); }
+
+    /* ===== GAME CHAT ===== */
+    .game-chat {
+      position: fixed; left: 8px; bottom: 42%; z-index: 400;
+      pointer-events: none; max-width: 200px;
+    }
+    .game-chat-line {
+      background: rgba(0,0,0,0.5); color: #fff; font-family: Jua, sans-serif;
+      font-size: 12px; padding: 3px 8px; border-radius: 8px; margin-bottom: 3px;
+      transition: opacity 1s; pointer-events: none;
+    }
+    .game-chat-line.fade-out { opacity: 0; }
+    .game-chat-btn {
+      position: fixed; bottom: 32%; left: 50%; transform: translateX(-50%);
+      z-index: 400;
+    }
+    .game-chat-input {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+      display: flex; padding: 6px 8px; background: rgba(0,0,0,0.85); gap: 6px;
+    }
+    .game-chat-input.hidden { display: none; }
+    .game-chat-field {
+      flex: 1; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px; background: rgba(255,255,255,0.1); color: #fff;
+      font-family: Jua, sans-serif; font-size: 14px; outline: none;
+    }
+    .game-chat-send {
+      padding: 8px 16px; background: #3498db; color: #fff; border: none;
+      border-radius: 20px; font-family: Jua, sans-serif; font-size: 14px; cursor: pointer;
+    }
+
+    /* ===== LOBBY CHAT ===== */
+    .lobby-chat {
+      margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;
+    }
+    .lobby-chat-messages {
+      max-height: 80px; overflow-y: auto; margin-bottom: 6px; font-size: 12px;
+      color: #ddd; font-family: Jua, sans-serif; line-height: 1.5;
+    }
+    .lobby-chat-line b { color: #ffd700; margin-right: 2px; }
+    .lobby-chat-row { display: flex; gap: 6px; }
+    .lobby-chat-field {
+      flex: 1; padding: 6px 10px; border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 16px; background: rgba(0,0,0,0.3); color: #fff;
+      font-family: Jua, sans-serif; font-size: 12px; outline: none;
+    }
+    .lobby-chat-send-btn {
+      padding: 6px 12px; background: #3498db; color: #fff; border: none;
+      border-radius: 16px; font-family: Jua, sans-serif; font-size: 12px; cursor: pointer;
+    }
+
+    /* ===== STATS PANEL ===== */
+    .stats-panel {
+      margin-top: 8px; padding: 10px; background: rgba(0,0,0,0.3);
+      border-radius: 12px; font-family: Jua, sans-serif; color: #ddd;
+    }
+    .stats-panel.hidden { display: none; }
+    .stats-summary { display: flex; gap: 12px; justify-content: center; font-size: 14px; margin-bottom: 8px; color: #ffd700; }
+    .stats-modes { font-size: 12px; }
+    .stats-mode-row { padding: 2px 0; }
 
     /* ===== LANDSCAPE RESPONSIVE ===== */
     @media (orientation: landscape) and (max-height: 500px) {
@@ -417,6 +500,9 @@
         </div>
 
         <div id="lobby-status"></div>
+
+        <button id="btn-stats" class="lobby-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#8e44ad,#9b59b6);font-size:14px;padding:8px;">📊 전적</button>
+        <div id="stats-panel" class="stats-panel hidden"></div>
       </div>
     </div>
 
@@ -438,6 +524,15 @@
 
         <div class="players-label">👥 대기실</div>
         <div id="player-list" class="player-list"></div>
+
+        <!-- Lobby Chat -->
+        <div id="lobby-chat" class="lobby-chat">
+          <div id="lobby-chat-messages" class="lobby-chat-messages"></div>
+          <div class="lobby-chat-row">
+            <input id="lobby-chat-input" class="lobby-chat-field" type="text" placeholder="메시지..." maxlength="50" autocomplete="off">
+            <button id="lobby-chat-send" class="lobby-chat-send-btn">전송</button>
+          </div>
+        </div>
 
         <div class="room-footer">
           <button id="btn-ready" class="lobby-btn orange" style="display:none;width:100%;margin-bottom:8px;">준비</button>

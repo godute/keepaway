@@ -59,6 +59,10 @@ class Player {
 
     // Lobby
     this.isReady = false;
+
+    // Rate limits
+    this.lastEmojiTime = 0;
+    this.lastChatTime = 0;
   }
 
   /** Reset game-specific state for new round */

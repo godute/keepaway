@@ -4,6 +4,7 @@ import { JoystickControl } from '../ui/JoystickControl.js';
 import sound from '../audio/SoundManager.js';
 import { CHARACTERS, DEFAULT_CHARACTER } from '../characters.js';
 import { createRenderer } from '../renderers/index.js';
+import { StatsManager } from '../stats/StatsManager.js';
 
 const LERP = 0.7;
 const DASH_COOLDOWN_MAX = 1.2;
@@ -90,20 +91,29 @@ export class GameScene extends Phaser.Scene {
     this.modeRenderer = createRenderer(this.gameType, this);
     this.modeRenderer.create();
 
+    // --- Emoji bar ---
+    this._createEmojiBar();
+
+    // --- In-game chat overlay ---
+    this._createGameChat();
+
     // --- Socket listeners ---
     if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
     if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
+    if (this._onChatMsgBound) socket.off('chat:message', this._onChatMsgBound);
 
     this._onGameStartBound = (data) => this._onGameStart(data);
     this._onGameStateBound = (state) => this._onGameState(state);
     this._onGameEventBound = (ev) => this._onGameEvent(ev);
     this._onGameEndBound = (data) => this._onGameEnd(data);
+    this._onChatMsgBound = (msg) => this._onChatMessage(msg);
     socket.on('game:start', this._onGameStartBound);
     socket.on('game:state', this._onGameStateBound);
     socket.on('game:event', this._onGameEventBound);
     socket.on('game:end', this._onGameEndBound);
+    socket.on('chat:message', this._onChatMsgBound);
 
     // Bind shutdown so it fires when the scene stops/restarts
     this.events.once('shutdown', this.shutdown, this);
@@ -150,11 +160,18 @@ export class GameScene extends Phaser.Scene {
       this._lobbyBtn = null;
     }
 
+    // Remove emoji bar and chat elements
+    if (this._emojiBar) { this._emojiBar.remove(); this._emojiBar = null; }
+    if (this._gameChatLog) { this._gameChatLog.remove(); this._gameChatLog = null; }
+    if (this._gameChatBtn) { this._gameChatBtn.remove(); this._gameChatBtn = null; }
+    if (this._gameChatInput) { this._gameChatInput.remove(); this._gameChatInput = null; }
+
     // Remove old socket listeners
     if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
     if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
+    if (this._onChatMsgBound) socket.off('chat:message', this._onChatMsgBound);
 
     // Reset state
     this.gameState = null;
@@ -630,6 +647,11 @@ export class GameScene extends Phaser.Scene {
   // --- Events ---
 
   _onGameEvent(ev) {
+    // Handle emoji events
+    if (ev.type === 'emoji') {
+      this._showBubble(ev.playerId, ev.emoji, 28, 2000);
+      return;
+    }
     // Delegate to renderer
     if (this.modeRenderer) {
       this.modeRenderer.onGameEvent(ev);
@@ -648,14 +670,199 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // --- Emoji bar ---
+
+  _createEmojiBar() {
+    const EMOJIS = ['😂', '👍', '🔥', '💀', '😭', '🎉'];
+    const bar = document.createElement('div');
+    bar.id = 'emoji-bar';
+    bar.className = 'emoji-bar collapsed';
+
+    const toggle = document.createElement('button');
+    toggle.className = 'emoji-toggle';
+    toggle.textContent = '😀';
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      bar.classList.toggle('collapsed');
+    });
+    bar.appendChild(toggle);
+
+    const row = document.createElement('div');
+    row.className = 'emoji-row';
+    EMOJIS.forEach(em => {
+      const btn = document.createElement('button');
+      btn.className = 'emoji-btn';
+      btn.textContent = em;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        socket.sendEmoji(em);
+        bar.classList.add('collapsed');
+      });
+      row.appendChild(btn);
+    });
+    bar.appendChild(row);
+    document.body.appendChild(bar);
+    this._emojiBar = bar;
+  }
+
+  // --- In-game chat ---
+
+  _createGameChat() {
+    // Chat log overlay
+    const chatLog = document.createElement('div');
+    chatLog.id = 'game-chat';
+    chatLog.className = 'game-chat';
+    document.body.appendChild(chatLog);
+    this._gameChatLog = chatLog;
+    this._chatMessages = [];
+
+    // Chat toggle button
+    const chatBtn = document.createElement('button');
+    chatBtn.id = 'game-chat-btn';
+    chatBtn.className = 'emoji-toggle game-chat-btn';
+    chatBtn.textContent = '💬';
+    chatBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._toggleChatInput();
+    });
+    document.body.appendChild(chatBtn);
+    this._gameChatBtn = chatBtn;
+
+    // Chat input bar (hidden)
+    const inputBar = document.createElement('div');
+    inputBar.id = 'game-chat-input';
+    inputBar.className = 'game-chat-input hidden';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '메시지 입력...';
+    input.maxLength = 50;
+    input.className = 'game-chat-field';
+    const sendBtn = document.createElement('button');
+    sendBtn.textContent = '전송';
+    sendBtn.className = 'game-chat-send';
+    const doSend = () => {
+      const text = input.value.trim();
+      if (text) {
+        socket.sendChat(text);
+        input.value = '';
+      }
+      inputBar.classList.add('hidden');
+      input.blur();
+    };
+    sendBtn.addEventListener('click', doSend);
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation(); // prevent game input capture
+      if (e.key === 'Enter') doSend();
+      if (e.key === 'Escape') { inputBar.classList.add('hidden'); input.blur(); }
+    });
+    // Prevent keyboard game controls while typing
+    input.addEventListener('keyup', (e) => e.stopPropagation());
+    inputBar.appendChild(input);
+    inputBar.appendChild(sendBtn);
+    document.body.appendChild(inputBar);
+    this._gameChatInput = inputBar;
+    this._gameChatField = input;
+  }
+
+  _toggleChatInput() {
+    if (!this._gameChatInput) return;
+    const hidden = this._gameChatInput.classList.toggle('hidden');
+    if (!hidden) {
+      setTimeout(() => this._gameChatField?.focus(), 50);
+    }
+  }
+
+  _onChatMessage(msg) {
+    // Show in chat log
+    if (this._gameChatLog) {
+      const line = document.createElement('div');
+      line.className = 'game-chat-line';
+      line.innerHTML = `<b>${this._escHtml(msg.playerName)}</b>: ${this._escHtml(msg.text)}`;
+      this._gameChatLog.appendChild(line);
+      // Keep max 4 messages
+      while (this._gameChatLog.children.length > 4) {
+        this._gameChatLog.removeChild(this._gameChatLog.firstChild);
+      }
+      // Fade out after 5s
+      setTimeout(() => {
+        line.classList.add('fade-out');
+        setTimeout(() => line.remove(), 1000);
+      }, 5000);
+    }
+
+    // Show speech bubble above player
+    this._showBubble(msg.playerId, msg.text, 13, 3000);
+  }
+
+  _escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // --- Speech bubble (shared by emoji + chat) ---
+
+  _showBubble(playerId, content, fontSize, duration) {
+    const g = this.playerGraphics.get(playerId);
+    if (!g) return;
+    const x = g.container.x;
+    const y = g.container.y - 40;
+
+    // Background
+    const isEmoji = fontSize >= 20;
+    const padding = isEmoji ? 4 : 8;
+    const bg = this.add.graphics().setDepth(60);
+    const text = this.add.text(x, y, content, {
+      fontSize: `${fontSize}px`,
+      color: '#ffffff',
+      fontFamily: 'Jua, sans-serif',
+      stroke: '#000000',
+      strokeThickness: isEmoji ? 0 : 2,
+      wordWrap: { width: 120 },
+      align: 'center',
+    }).setOrigin(0.5).setDepth(61);
+
+    const bw = text.width + padding * 2;
+    const bh = text.height + padding * 2;
+    if (!isEmoji) {
+      bg.fillStyle(0x000000, 0.6);
+      bg.fillRoundedRect(x - bw / 2, y - bh / 2, bw, bh, 8);
+    }
+
+    // Animate up and fade
+    this.tweens.add({
+      targets: [text, bg],
+      y: `-=${30}`,
+      alpha: 0,
+      duration,
+      ease: 'Power1',
+      onUpdate: () => {
+        if (!isEmoji) {
+          bg.clear();
+          bg.fillStyle(0x000000, 0.6 * text.alpha);
+          bg.fillRoundedRect(text.x - bw / 2, text.y - bh / 2, bw, bh, 8);
+        }
+      },
+      onComplete: () => {
+        text.destroy();
+        bg.destroy();
+      },
+    });
+  }
+
   // --- Game end ---
 
   _onGameEnd(data) {
     sound.win();
-    if (this.joystick) {
-      this.joystick.destroy();
-      this.joystick = null;
-    }
+
+    // Record stats
+    StatsManager.recordGame(this.gameType, data.winnerId === this.myId);
+
+    if (this.joystick) { this.joystick.destroy(); this.joystick = null; }
+    if (this._emojiBar) { this._emojiBar.remove(); this._emojiBar = null; }
+    if (this._gameChatLog) { this._gameChatLog.remove(); this._gameChatLog = null; }
+    if (this._gameChatBtn) { this._gameChatBtn.remove(); this._gameChatBtn = null; }
+    if (this._gameChatInput) { this._gameChatInput.remove(); this._gameChatInput = null; }
 
     // Cleanup renderer
     if (this.modeRenderer) {
@@ -742,8 +949,13 @@ export class GameScene extends Phaser.Scene {
     if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
+    if (this._onChatMsgBound) socket.off('chat:message', this._onChatMsgBound);
 
     if (this._lobbyBtn) { this._lobbyBtn.remove(); this._lobbyBtn = null; }
+    if (this._emojiBar) { this._emojiBar.remove(); this._emojiBar = null; }
+    if (this._gameChatLog) { this._gameChatLog.remove(); this._gameChatLog = null; }
+    if (this._gameChatBtn) { this._gameChatBtn.remove(); this._gameChatBtn = null; }
+    if (this._gameChatInput) { this._gameChatInput.remove(); this._gameChatInput = null; }
     if (this.modeRenderer) { try { this.modeRenderer.destroy(); } catch (e) {} this.modeRenderer = null; }
     if (this.joystick) { try { this.joystick.destroy(); } catch (e) {} this.joystick = null; }
     for (const g of this.playerGraphics.values()) {

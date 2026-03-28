@@ -19,7 +19,12 @@ function createGameMode(gameType, room) {
 }
 
 function isValidGameType(type) {
-  return type in GAME_MODES;
+  return type === 'random' || type in GAME_MODES;
 }
 
-module.exports = { GAME_MODES, createGameMode, isValidGameType };
+function getRandomGameType(playerCount) {
+  const eligible = Object.keys(GAME_MODES).filter(key => GAME_MODES[key].minPlayers <= playerCount);
+  return eligible[Math.floor(Math.random() * eligible.length)] || 'keepaway';
+}
+
+module.exports = { GAME_MODES, createGameMode, isValidGameType, getRandomGameType };

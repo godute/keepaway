@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import socket from '../network/SocketClient.js';
 import { CHARACTERS, CHARACTER_IDS, DEFAULT_CHARACTER } from '../characters.js';
 import { GAME_MODES, GAME_MODE_IDS, DEFAULT_GAME_MODE } from '../gamemodes/GameModeConfig.js';
+import { StatsManager } from '../stats/StatsManager.js';
 
 /**
  * LobbyScene — manages the HTML lobby overlay (responsive, mobile-friendly).
@@ -32,6 +33,7 @@ export class LobbyScene extends Phaser.Scene {
     }
     if (this._roomUpdateHandler) socket.off('room:update', this._roomUpdateHandler);
     if (this._gameStartHandler) socket.off('game:start', this._gameStartHandler);
+    if (this._lobbyChatHandler) socket.off('chat:message', this._lobbyChatHandler);
 
     socket.connect();
     this.selectedCharacter = DEFAULT_CHARACTER;
@@ -82,8 +84,15 @@ export class LobbyScene extends Phaser.Scene {
       this._hideOverlay();
       this.scene.start('GameScene', { roomCode: this.roomCode, myName: this.myName, gameData });
     };
+    this._lobbyChatHandler = (msg) => this._onLobbyChat(msg);
     socket.on('room:update', this._roomUpdateHandler);
     socket.on('game:start', this._gameStartHandler);
+    socket.on('chat:message', this._lobbyChatHandler);
+
+    // Setup lobby chat
+    this._setupLobbyChat();
+    // Setup stats panel
+    this._setupStatsPanel();
 
     // Bind shutdown for cleanup
     this.events.once('shutdown', this.shutdown, this);
@@ -339,6 +348,84 @@ export class LobbyScene extends Phaser.Scene {
     if (this._statusTextRoom) this._statusTextRoom.textContent = msg;
   }
 
+  // --- Lobby chat ---
+
+  _setupLobbyChat() {
+    this._lobbyChatEl = document.getElementById('lobby-chat');
+    this._lobbyChatMessages = document.getElementById('lobby-chat-messages');
+    this._lobbyChatInput = document.getElementById('lobby-chat-input');
+    this._lobbyChatSend = document.getElementById('lobby-chat-send');
+
+    if (this._lobbyChatMessages) this._lobbyChatMessages.innerHTML = '';
+
+    const doSend = () => {
+      const text = this._lobbyChatInput?.value.trim();
+      if (text) {
+        socket.sendChat(text);
+        this._lobbyChatInput.value = '';
+      }
+    };
+    if (this._lobbyChatSend) {
+      this._lobbyChatSend.addEventListener('click', doSend);
+      this._btnHandlers.push({ el: this._lobbyChatSend, handler: doSend });
+    }
+    if (this._lobbyChatInput) {
+      const handler = (e) => { if (e.key === 'Enter') doSend(); };
+      this._lobbyChatInput.addEventListener('keydown', handler);
+      this._btnHandlers.push({ el: this._lobbyChatInput, handler });
+    }
+  }
+
+  _onLobbyChat(msg) {
+    if (!this._lobbyChatMessages) return;
+    const line = document.createElement('div');
+    line.className = 'lobby-chat-line';
+    const nameSpan = document.createElement('b');
+    nameSpan.textContent = msg.playerName;
+    const textSpan = document.createElement('span');
+    textSpan.textContent = `: ${msg.text}`;
+    line.appendChild(nameSpan);
+    line.appendChild(textSpan);
+    this._lobbyChatMessages.appendChild(line);
+    this._lobbyChatMessages.scrollTop = this._lobbyChatMessages.scrollHeight;
+    // Keep max 50 messages
+    while (this._lobbyChatMessages.children.length > 50) {
+      this._lobbyChatMessages.removeChild(this._lobbyChatMessages.firstChild);
+    }
+  }
+
+  // --- Stats panel ---
+
+  _setupStatsPanel() {
+    this._statsPanel = document.getElementById('stats-panel');
+    this._bindBtn('btn-stats', () => {
+      if (!this._statsPanel) return;
+      const hidden = this._statsPanel.classList.toggle('hidden');
+      if (!hidden) this._refreshStats();
+    });
+  }
+
+  _refreshStats() {
+    if (!this._statsPanel) return;
+    const stats = StatsManager.getStats();
+    const winRate = StatsManager.getWinRate();
+
+    let html = `<div class="stats-summary">`;
+    html += `<div>🎮 총 ${stats.totalGames}게임</div>`;
+    html += `<div>🏆 ${stats.totalWins}승 (${winRate}%)</div>`;
+    html += `</div>`;
+    html += `<div class="stats-modes">`;
+
+    const modeIds = Object.keys(GAME_MODES).filter(id => id !== 'random');
+    for (const id of modeIds) {
+      const mode = GAME_MODES[id];
+      const ms = stats.byMode[id] || { played: 0, wins: 0 };
+      html += `<div class="stats-mode-row">${mode.emoji} ${mode.nameKo}: ${ms.wins}/${ms.played}</div>`;
+    }
+    html += `</div>`;
+    this._statsPanel.innerHTML = html;
+  }
+
   // --- Cleanup ---
 
   shutdown() {
@@ -350,5 +437,6 @@ export class LobbyScene extends Phaser.Scene {
     }
     if (this._roomUpdateHandler) socket.off('room:update', this._roomUpdateHandler);
     if (this._gameStartHandler) socket.off('game:start', this._gameStartHandler);
+    if (this._lobbyChatHandler) socket.off('chat:message', this._lobbyChatHandler);
   }
 }

@@ -26,7 +26,7 @@ class SocketClient {
 
     // Forward all game events
     const events = [
-      'room:update', 'game:start', 'game:state', 'game:event', 'game:end',
+      'room:update', 'game:start', 'game:state', 'game:event', 'game:end', 'chat:message',
     ];
     events.forEach(ev => {
       this.socket.on(ev, (data) => this._emit(ev, data));
@@ -73,6 +73,14 @@ class SocketClient {
 
   startGame(code) {
     return new Promise(resolve => this.socket.emit('room:start', { code }, resolve));
+  }
+
+  sendEmoji(emoji) {
+    this.socket?.emit('player:emoji', { emoji });
+  }
+
+  sendChat(text) {
+    this.socket?.emit('chat:message', { text });
   }
 
   sendInput(dx, dy, dash) {

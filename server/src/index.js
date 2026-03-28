@@ -108,6 +108,39 @@ io.on('connection', (socket) => {
     cb && cb({ ok: true });
   });
 
+  // Emoji reaction
+  const ALLOWED_EMOJIS = ['😂', '👍', '🔥', '💀', '😭', '🎉'];
+  socket.on('player:emoji', ({ emoji }) => {
+    if (!ALLOWED_EMOJIS.includes(emoji)) return;
+    for (const room of roomManager.rooms.values()) {
+      if (room.players.has(socket.id)) {
+        const player = room.players.get(socket.id);
+        const now = Date.now();
+        if (now - player.lastEmojiTime < 1000) return; // rate limit
+        player.lastEmojiTime = now;
+        io.to(room.code).emit('game:event', { type: 'emoji', playerId: socket.id, emoji });
+        break;
+      }
+    }
+  });
+
+  // Chat message
+  socket.on('chat:message', ({ text }) => {
+    if (!text || typeof text !== 'string') return;
+    const cleaned = text.trim().replace(/<[^>]*>/g, '').slice(0, 50);
+    if (!cleaned) return;
+    for (const room of roomManager.rooms.values()) {
+      if (room.players.has(socket.id)) {
+        const player = room.players.get(socket.id);
+        const now = Date.now();
+        if (now - player.lastChatTime < 1000) return; // rate limit
+        player.lastChatTime = now;
+        io.to(room.code).emit('chat:message', { playerId: socket.id, playerName: player.name, text: cleaned });
+        break;
+      }
+    }
+  });
+
   // Player input during game
   socket.on('player:input', (input) => {
     roomManager.removePlayerFromAllRooms; // no-op reference (find room manually)

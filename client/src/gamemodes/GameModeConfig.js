@@ -4,6 +4,7 @@ export const GAME_MODES = {
   hotpotato: { id: 'hotpotato', name: 'Hot Potato', nameKo: '폭탄 돌리기',    emoji: '💣', desc: '폭탄 터지기 전에 넘겨라!', minPlayers: 3 },
   territory: { id: 'territory', name: 'Territory',  nameKo: '영역 칠하기',    emoji: '🎨', desc: '가장 넓은 영역 차지!', minPlayers: 2 },
   sumo:      { id: 'sumo',      name: 'Sumo',       nameKo: '씨름',           emoji: '🤼', desc: '링 밖으로 밀어내라!', minPlayers: 2 },
+  random:    { id: 'random',    name: 'Random',     nameKo: '랜덤',           emoji: '🎲', desc: '무작위 게임!',       minPlayers: 2 },
 };
 
 export const GAME_MODE_IDS = Object.keys(GAME_MODES);

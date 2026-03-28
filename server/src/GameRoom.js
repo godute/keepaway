@@ -1,5 +1,5 @@
 const { Player } = require('./Player');
-const { createGameMode, isValidGameType } = require('./gamemodes');
+const { createGameMode, isValidGameType, getRandomGameType } = require('./gamemodes');
 
 const MAP_WIDTH = 960;
 const MAP_HEIGHT = 540;
@@ -93,8 +93,13 @@ class GameRoom {
     this.phase = 'playing';
     this.winner = null;
 
+    // Resolve random mode to actual game type
+    const resolvedGameType = this.selectedGameType === 'random'
+      ? getRandomGameType(this.players.size)
+      : this.selectedGameType;
+
     // Create game mode
-    this.gameMode = createGameMode(this.selectedGameType, this);
+    this.gameMode = createGameMode(resolvedGameType, this);
 
     // Get obstacles from game mode
     const obstacles = this.gameMode.getObstacles();
@@ -114,7 +119,7 @@ class GameRoom {
     const startPayload = {
       mapWidth: MAP_WIDTH,
       mapHeight: MAP_HEIGHT,
-      gameType: this.selectedGameType,
+      gameType: resolvedGameType,
       ...this.gameMode.getStartPayload(),
     };
     this.io.to(this.code).emit('game:start', startPayload);
