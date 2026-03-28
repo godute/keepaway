@@ -22,7 +22,7 @@ export class GameScene extends Phaser.Scene {
     this._dashTrails = [];
     this._obstacles = [];
     this._muted = false;
-    this.renderer = null;
+    this.modeRenderer = null;
     this.gameType = 'keepaway';
   }
 
@@ -87,8 +87,8 @@ export class GameScene extends Phaser.Scene {
     this.joystick.create(() => { this.dashPending = true; });
 
     // --- Create game-specific renderer ---
-    this.renderer = createRenderer(this.gameType, this);
-    this.renderer.create();
+    this.modeRenderer = createRenderer(this.gameType, this);
+    this.modeRenderer.create();
 
     // --- Socket listeners ---
     if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
@@ -133,9 +133,9 @@ export class GameScene extends Phaser.Scene {
     this._dashTrails = [];
 
     // Remove old renderer
-    if (this.renderer) {
-      try { this.renderer.destroy(); } catch (e) {}
-      this.renderer = null;
+    if (this.modeRenderer) {
+      try { this.modeRenderer.destroy(); } catch (e) {}
+      this.modeRenderer = null;
     }
 
     // Remove old joystick
@@ -258,8 +258,8 @@ export class GameScene extends Phaser.Scene {
       this._obstacleGraphics.clear();
     }
     // Let renderer handle mode-specific start data
-    if (this.renderer?.onGameStart) {
-      this.renderer.onGameStart(data);
+    if (this.modeRenderer?.onGameStart) {
+      this.modeRenderer.onGameStart(data);
     }
   }
 
@@ -412,8 +412,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Let renderer handle game-specific state (bone, bomb, ring, etc.)
-    if (this.renderer) {
-      this.renderer.onGameState(state);
+    if (this.modeRenderer) {
+      this.modeRenderer.onGameState(state);
     }
 
     // Scoreboard — delegate formatting to renderer
@@ -424,8 +424,8 @@ export class GameScene extends Phaser.Scene {
     this._scorePanel.fillRoundedRect(6, 6, 170, panelH, 8);
 
     let lines;
-    if (this.renderer?.formatScoreboard) {
-      lines = this.renderer.formatScoreboard(sorted, this.myId);
+    if (this.modeRenderer?.formatScoreboard) {
+      lines = this.modeRenderer.formatScoreboard(sorted, this.myId);
     } else {
       lines = sorted.map(p => `${p.name}  ${Math.floor(p.score)}`);
     }
@@ -560,8 +560,8 @@ export class GameScene extends Phaser.Scene {
     g.nameText.setPosition(tx, ty + p.radius + 16);
 
     // Let renderer draw score bars (or use default)
-    if (this.renderer?.drawPlayerScoreBar) {
-      this.renderer.drawPlayerScoreBar(g, p, tx, ty);
+    if (this.modeRenderer?.drawPlayerScoreBar) {
+      this.modeRenderer.drawPlayerScoreBar(g, p, tx, ty);
     } else {
       const barW = 50, barH = 5;
       const pct = Math.min(p.score / 30, 1);
@@ -631,8 +631,8 @@ export class GameScene extends Phaser.Scene {
 
   _onGameEvent(ev) {
     // Delegate to renderer
-    if (this.renderer) {
-      this.renderer.onGameEvent(ev);
+    if (this.modeRenderer) {
+      this.modeRenderer.onGameEvent(ev);
     }
   }
 
@@ -658,9 +658,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Cleanup renderer
-    if (this.renderer) {
-      this.renderer.destroy();
-      this.renderer = null;
+    if (this.modeRenderer) {
+      this.modeRenderer.destroy();
+      this.modeRenderer = null;
     }
 
     const W = this.mapWidth, H = this.mapHeight;
@@ -744,7 +744,7 @@ export class GameScene extends Phaser.Scene {
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
 
     if (this._lobbyBtn) { this._lobbyBtn.remove(); this._lobbyBtn = null; }
-    if (this.renderer) { try { this.renderer.destroy(); } catch (e) {} this.renderer = null; }
+    if (this.modeRenderer) { try { this.modeRenderer.destroy(); } catch (e) {} this.modeRenderer = null; }
     if (this.joystick) { try { this.joystick.destroy(); } catch (e) {} this.joystick = null; }
     for (const g of this.playerGraphics.values()) {
       try { g.container?.destroy(); } catch (e) {}
