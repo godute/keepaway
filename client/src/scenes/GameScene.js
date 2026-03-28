@@ -94,26 +94,20 @@ export class GameScene extends Phaser.Scene {
     // --- Emoji bar ---
     this._createEmojiBar();
 
-    // --- In-game chat overlay ---
-    this._createGameChat();
-
     // --- Socket listeners ---
     if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
     if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
-    if (this._onChatMsgBound) socket.off('chat:message', this._onChatMsgBound);
 
     this._onGameStartBound = (data) => this._onGameStart(data);
     this._onGameStateBound = (state) => this._onGameState(state);
     this._onGameEventBound = (ev) => this._onGameEvent(ev);
     this._onGameEndBound = (data) => this._onGameEnd(data);
-    this._onChatMsgBound = (msg) => this._onChatMessage(msg);
     socket.on('game:start', this._onGameStartBound);
     socket.on('game:state', this._onGameStateBound);
     socket.on('game:event', this._onGameEventBound);
     socket.on('game:end', this._onGameEndBound);
-    socket.on('chat:message', this._onChatMsgBound);
 
     // Bind shutdown so it fires when the scene stops/restarts
     this.events.once('shutdown', this.shutdown, this);
@@ -160,18 +154,14 @@ export class GameScene extends Phaser.Scene {
       this._lobbyBtn = null;
     }
 
-    // Remove emoji bar and chat elements
+    // Remove emoji bar
     if (this._emojiBar) { this._emojiBar.remove(); this._emojiBar = null; }
-    if (this._gameChatLog) { this._gameChatLog.remove(); this._gameChatLog = null; }
-    if (this._gameChatBtn) { this._gameChatBtn.remove(); this._gameChatBtn = null; }
-    if (this._gameChatInput) { this._gameChatInput.remove(); this._gameChatInput = null; }
 
     // Remove old socket listeners
     if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
     if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
-    if (this._onChatMsgBound) socket.off('chat:message', this._onChatMsgBound);
 
     // Reset state
     this.gameState = null;
@@ -705,102 +695,7 @@ export class GameScene extends Phaser.Scene {
     this._emojiBar = bar;
   }
 
-  // --- In-game chat ---
-
-  _createGameChat() {
-    // Chat log overlay
-    const chatLog = document.createElement('div');
-    chatLog.id = 'game-chat';
-    chatLog.className = 'game-chat';
-    document.body.appendChild(chatLog);
-    this._gameChatLog = chatLog;
-    this._chatMessages = [];
-
-    // Chat toggle button
-    const chatBtn = document.createElement('button');
-    chatBtn.id = 'game-chat-btn';
-    chatBtn.className = 'emoji-toggle game-chat-btn';
-    chatBtn.textContent = '💬';
-    chatBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this._toggleChatInput();
-    });
-    document.body.appendChild(chatBtn);
-    this._gameChatBtn = chatBtn;
-
-    // Chat input bar (hidden)
-    const inputBar = document.createElement('div');
-    inputBar.id = 'game-chat-input';
-    inputBar.className = 'game-chat-input hidden';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = '메시지 입력...';
-    input.maxLength = 50;
-    input.className = 'game-chat-field';
-    const sendBtn = document.createElement('button');
-    sendBtn.textContent = '전송';
-    sendBtn.className = 'game-chat-send';
-    const doSend = () => {
-      const text = input.value.trim();
-      if (text) {
-        socket.sendChat(text);
-        input.value = '';
-      }
-      inputBar.classList.add('hidden');
-      input.blur();
-    };
-    sendBtn.addEventListener('click', doSend);
-    input.addEventListener('keydown', (e) => {
-      e.stopPropagation(); // prevent game input capture
-      if (e.key === 'Enter') doSend();
-      if (e.key === 'Escape') { inputBar.classList.add('hidden'); input.blur(); }
-    });
-    // Prevent keyboard game controls while typing
-    input.addEventListener('keyup', (e) => e.stopPropagation());
-    inputBar.appendChild(input);
-    inputBar.appendChild(sendBtn);
-    document.body.appendChild(inputBar);
-    this._gameChatInput = inputBar;
-    this._gameChatField = input;
-  }
-
-  _toggleChatInput() {
-    if (!this._gameChatInput) return;
-    const hidden = this._gameChatInput.classList.toggle('hidden');
-    if (!hidden) {
-      setTimeout(() => this._gameChatField?.focus(), 50);
-    }
-  }
-
-  _onChatMessage(msg) {
-    // Show in chat log
-    if (this._gameChatLog) {
-      const line = document.createElement('div');
-      line.className = 'game-chat-line';
-      line.innerHTML = `<b>${this._escHtml(msg.playerName)}</b>: ${this._escHtml(msg.text)}`;
-      this._gameChatLog.appendChild(line);
-      // Keep max 4 messages
-      while (this._gameChatLog.children.length > 4) {
-        this._gameChatLog.removeChild(this._gameChatLog.firstChild);
-      }
-      // Fade out after 5s
-      setTimeout(() => {
-        line.classList.add('fade-out');
-        setTimeout(() => line.remove(), 1000);
-      }, 5000);
-    }
-
-    // Show speech bubble above player
-    this._showBubble(msg.playerId, msg.text, 13, 3000);
-  }
-
-  _escHtml(s) {
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-  }
-
-  // --- Speech bubble (shared by emoji + chat) ---
+  // --- Speech bubble (for emoji) ---
 
   _showBubble(playerId, content, fontSize, duration) {
     const g = this.playerGraphics.get(playerId);
@@ -860,9 +755,6 @@ export class GameScene extends Phaser.Scene {
 
     if (this.joystick) { this.joystick.destroy(); this.joystick = null; }
     if (this._emojiBar) { this._emojiBar.remove(); this._emojiBar = null; }
-    if (this._gameChatLog) { this._gameChatLog.remove(); this._gameChatLog = null; }
-    if (this._gameChatBtn) { this._gameChatBtn.remove(); this._gameChatBtn = null; }
-    if (this._gameChatInput) { this._gameChatInput.remove(); this._gameChatInput = null; }
 
     // Cleanup renderer
     if (this.modeRenderer) {
@@ -949,13 +841,9 @@ export class GameScene extends Phaser.Scene {
     if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
-    if (this._onChatMsgBound) socket.off('chat:message', this._onChatMsgBound);
 
     if (this._lobbyBtn) { this._lobbyBtn.remove(); this._lobbyBtn = null; }
     if (this._emojiBar) { this._emojiBar.remove(); this._emojiBar = null; }
-    if (this._gameChatLog) { this._gameChatLog.remove(); this._gameChatLog = null; }
-    if (this._gameChatBtn) { this._gameChatBtn.remove(); this._gameChatBtn = null; }
-    if (this._gameChatInput) { this._gameChatInput.remove(); this._gameChatInput = null; }
     if (this.modeRenderer) { try { this.modeRenderer.destroy(); } catch (e) {} this.modeRenderer = null; }
     if (this.joystick) { try { this.joystick.destroy(); } catch (e) {} this.joystick = null; }
     for (const g of this.playerGraphics.values()) {
