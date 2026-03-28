@@ -59,6 +59,10 @@ class SocketClient {
     this.socket?.emit('player:character', { characterId });
   }
 
+  selectGame(code, gameType) {
+    return new Promise(resolve => this.socket.emit('room:selectGame', { code, gameType }, resolve));
+  }
+
   rejoinRoom(code) {
     return new Promise(resolve => this.socket.emit('room:rejoin', { code }, resolve));
   }

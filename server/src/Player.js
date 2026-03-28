@@ -51,6 +51,28 @@ class Player {
     this.hasBone = false;
     this.score = 0;
     this.isAlive = true;
+
+    // Game-mode-specific flags
+    this.isIt = false;        // Tag
+    this.hasBomb = false;     // Hot Potato
+    this.isEliminated = false; // Hot Potato, Sumo
+  }
+
+  /** Reset game-specific state for new round */
+  reset() {
+    this.vx = 0; this.vy = 0;
+    this.dx = 0; this.dy = 0;
+    this.isDashing = false;
+    this.dashTimer = 0;
+    this.dashCooldown = 0;
+    this.wantsDash = false;
+    this.knockbackTimer = 0;
+    this.hasBone = false;
+    this.score = 0;
+    this.isAlive = true;
+    this.isIt = false;
+    this.hasBomb = false;
+    this.isEliminated = false;
   }
 
   setInput(dx, dy, dash) {
@@ -181,6 +203,9 @@ class Player {
       isDashing: this.isDashing,
       dashCooldown: Math.max(0, this.dashCooldown),
       isKnockedBack: this.knockbackTimer > 0,
+      isIt: this.isIt,
+      hasBomb: this.hasBomb,
+      isEliminated: this.isEliminated,
     };
   }
 }

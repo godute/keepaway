@@ -192,6 +192,43 @@
     }
     .char-card.selected .char-check { display: block; }
 
+    /* --- Game Selection Grid --- */
+    .game-label {
+      text-align: center;
+      color: #88ddff;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .game-card {
+      background: rgba(42, 36, 96, 0.6);
+      border: 2px solid rgba(61, 47, 127, 0.3);
+      border-radius: 12px;
+      padding: 8px 4px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .game-card:active { transform: scale(0.96); }
+    .game-card.selected {
+      border-color: #88ddff;
+      background: rgba(100, 180, 255, 0.15);
+      box-shadow: 0 0 10px rgba(100, 180, 255, 0.2);
+    }
+    .game-card.disabled { opacity: 0.5; pointer-events: none; }
+    .game-card .game-emoji { font-size: 22px; line-height: 1.2; }
+    .game-card .game-name {
+      font-size: 9px; color: #ccccdd;
+      margin-top: 2px; line-height: 1.1;
+    }
+    .game-card.selected .game-name { color: #88ddff; }
+
     .room-divider {
       border: none;
       border-top: 1px solid rgba(61, 47, 127, 0.5);
@@ -266,6 +303,11 @@
       .player-list { font-size: 13px; line-height: 1.5; margin-bottom: 8px; }
       #lobby-status { font-size: 11px; margin-top: 6px; }
       #dash-btn { width: 70px; height: 70px; right: 16px; bottom: 30px; font-size: 13px; }
+      .game-label { font-size: 12px; margin-bottom: 6px; }
+      .game-grid { gap: 4px; margin-bottom: 8px; }
+      .game-card { padding: 5px 3px 4px; border-radius: 8px; }
+      .game-card .game-emoji { font-size: 16px; }
+      .game-card .game-name { font-size: 8px; }
     }
 
     /* ===== ROTATE PHONE OVERLAY (game only, not lobby) ===== */
@@ -357,9 +399,9 @@
     <!-- PRE-ROOM VIEW -->
     <div id="lobby-pre">
       <div class="lobby-panel">
-        <div class="lobby-poodle">🐩</div>
-        <div class="lobby-title">KEEPAWAY</div>
-        <div class="lobby-subtitle">황금 뼈다귀를 지켜라!</div>
+        <div class="lobby-poodle">🐾</div>
+        <div class="lobby-title">DOGGY GAMES</div>
+        <div class="lobby-subtitle">친구들과 함께하는 미니게임!</div>
 
         <input id="name-input" class="lobby-input" placeholder="닉네임 입력" maxlength="10" />
 
@@ -387,6 +429,9 @@
 
         <div class="char-label">🐶 캐릭터 선택</div>
         <div id="char-grid" class="char-grid"></div>
+
+        <div class="game-label">🎮 게임 선택</div>
+        <div id="game-grid" class="game-grid"></div>
 
         <hr class="room-divider" />
 

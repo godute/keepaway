@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import socket from '../network/SocketClient.js';
 import { CHARACTERS, CHARACTER_IDS, DEFAULT_CHARACTER } from '../characters.js';
+import { GAME_MODES, GAME_MODE_IDS, DEFAULT_GAME_MODE } from '../gamemodes/GameModeConfig.js';
 
 /**
  * LobbyScene — manages the HTML lobby overlay (responsive, mobile-friendly).
@@ -14,6 +15,7 @@ export class LobbyScene extends Phaser.Scene {
     this.roomCode = null;
     this.isHost = false;
     this.selectedCharacter = DEFAULT_CHARACTER;
+    this.selectedGame = DEFAULT_GAME_MODE;
   }
 
   init(data) {
@@ -23,6 +25,7 @@ export class LobbyScene extends Phaser.Scene {
   create() {
     socket.connect();
     this.selectedCharacter = DEFAULT_CHARACTER;
+    this.selectedGame = DEFAULT_GAME_MODE;
 
     // Grab DOM elements
     this._overlay = document.getElementById('lobby-overlay');
@@ -38,14 +41,16 @@ export class LobbyScene extends Phaser.Scene {
     this._startBtn = document.getElementById('btn-start');
     this._waitText = document.getElementById('wait-text');
     this._charGrid = document.getElementById('char-grid');
+    this._gameGrid = document.getElementById('game-grid');
 
     // Show lobby overlay, hide Phaser canvas
     this._overlay.classList.remove('hidden');
     const canvas = this.game.canvas;
     if (canvas) canvas.style.display = 'none';
 
-    // Build character grid
+    // Build grids
     this._buildCharGrid();
+    this._buildGameGrid();
 
     // Bind buttons
     this._bindBtn('btn-create', () => this._createRoom());
@@ -117,6 +122,43 @@ export class LobbyScene extends Phaser.Scene {
     });
   }
 
+  // --- Game selection grid ---
+
+  _buildGameGrid() {
+    this._gameGrid.innerHTML = '';
+    GAME_MODE_IDS.forEach(gameId => {
+      const mode = GAME_MODES[gameId];
+      const card = document.createElement('div');
+      card.className = 'game-card' + (gameId === this.selectedGame ? ' selected' : '');
+      card.dataset.gameId = gameId;
+      card.innerHTML = `
+        <div class="game-emoji">${mode.emoji}</div>
+        <div class="game-name">${mode.nameKo}</div>
+      `;
+      card.addEventListener('click', () => {
+        if (!this.isHost) return; // Only host can change
+        this.selectedGame = gameId;
+        socket.selectGame(this.roomCode, gameId);
+        this._refreshGameGrid();
+      });
+      this._gameGrid.appendChild(card);
+    });
+  }
+
+  _refreshGameGrid() {
+    const cards = this._gameGrid.querySelectorAll('.game-card');
+    cards.forEach(card => {
+      const isSelected = card.dataset.gameId === this.selectedGame;
+      card.classList.toggle('selected', isSelected);
+      // Non-host can't click
+      if (!this.isHost) {
+        card.style.cursor = 'default';
+      } else {
+        card.style.cursor = 'pointer';
+      }
+    });
+  }
+
   // --- View switching ---
 
   _showPreRoom() {
@@ -142,7 +184,6 @@ export class LobbyScene extends Phaser.Scene {
   _bindBtn(id, handler) {
     const el = document.getElementById(id);
     if (!el) return;
-    // Store handler ref for cleanup
     if (!this._btnHandlers) this._btnHandlers = [];
     this._btnHandlers.push({ el, handler });
     el.addEventListener('click', handler);
@@ -208,7 +249,17 @@ export class LobbyScene extends Phaser.Scene {
     const isHost = socket.id && state.players[0]?.id === socket.id;
     this.isHost = isHost;
 
+    // Update selected game from server state
+    if (state.selectedGameType) {
+      this.selectedGame = state.selectedGameType;
+      this._refreshGameGrid();
+    }
+
     this._roomBadge.textContent = `🔑 ${state.code}  (${state.players.length}/8)`;
+
+    // Show selected game name
+    const gameMode = GAME_MODES[this.selectedGame];
+    const gameName = gameMode ? `${gameMode.emoji} ${gameMode.nameKo}` : '';
 
     const listHtml = state.players.map((p, i) => {
       const crown = i === 0 ? '👑 ' : '';
@@ -217,12 +268,22 @@ export class LobbyScene extends Phaser.Scene {
     }).join('<br>');
     this._playerList.innerHTML = listHtml;
 
+    // Update start button text with game name
+    if (gameMode) {
+      this._startBtn.textContent = `▶  ${gameMode.nameKo} 시작`;
+    }
+
     if (isHost && state.players.length >= 2) {
       this._startBtn.style.display = 'block';
       this._waitText.style.display = 'none';
     } else {
       this._startBtn.style.display = 'none';
       this._waitText.style.display = 'block';
+      if (!isHost) {
+        this._waitText.textContent = gameName
+          ? `${gameName} — 호스트가 시작할 때까지 기다려주세요...`
+          : '호스트가 게임을 시작할 때까지 기다려주세요...';
+      }
     }
   }
 
@@ -239,14 +300,12 @@ export class LobbyScene extends Phaser.Scene {
   // --- Cleanup ---
 
   shutdown() {
-    // Remove button handlers
     if (this._btnHandlers) {
       for (const { el, handler } of this._btnHandlers) {
         el.removeEventListener('click', handler);
       }
       this._btnHandlers = [];
     }
-    // Remove socket handlers
     if (this._roomUpdateHandler) socket.off('room:update', this._roomUpdateHandler);
     if (this._gameStartHandler) socket.off('game:start', this._gameStartHandler);
   }

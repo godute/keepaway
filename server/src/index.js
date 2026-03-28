@@ -63,6 +63,15 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Select game mode (host only)
+  socket.on('room:selectGame', ({ code, gameType }, cb) => {
+    const room = roomManager.getRoom(code);
+    if (!room) return cb && cb({ ok: false, error: 'Room not found' });
+    if (room.playerOrder[0] !== socket.id) return cb && cb({ ok: false, error: 'Only host' });
+    room.setGameType(gameType);
+    cb && cb({ ok: true });
+  });
+
   // Rejoin room (request current state after returning from game)
   socket.on('room:rejoin', ({ code }, cb) => {
     const room = roomManager.getRoom(code);

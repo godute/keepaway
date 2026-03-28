@@ -1,34 +1,9 @@
-const { Player, BONE_PICKUP_RADIUS, DASH_HIT_RADIUS } = require('./Player');
+const { Player } = require('./Player');
+const { createGameMode, isValidGameType } = require('./gamemodes');
 
 const MAP_WIDTH = 960;
 const MAP_HEIGHT = 540;
 const TICK_RATE = 60;
-const SCORE_PER_SECOND = 1;
-const WIN_SCORE = 30;
-const BONE_RESPAWN_DELAY = 2.0;
-
-// Map obstacles (AABB: x, y, w, h, type)
-const OBSTACLES = [
-  // Corner trees
-  { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
-  // Center pond
-  { x: 440, y: 230, w: 80, h: 80, type: 'pond' },
-  // Side rocks
-  { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
-  { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
-  // Fences
-  { x: 220, y: 330, w: 90, h: 20, type: 'fence' },
-  { x: 650, y: 190, w: 90, h: 20, type: 'fence' },
-  // Small bushes
-  { x: 420, y: 80, w: 40, h: 40, type: 'bush' },
-  { x: 500, y: 420, w: 40, h: 40, type: 'bush' },
-  // Extra obstacles for wider map
-  { x: 180, y: 230, w: 40, h: 40, type: 'bush' },
-  { x: 740, y: 280, w: 45, h: 35, type: 'rock' },
-];
 
 class GameRoom {
   constructor(code, io) {
@@ -36,20 +11,17 @@ class GameRoom {
     this.io = io;
     this.players = new Map();
     this.playerOrder = [];
-    this.obstacles = OBSTACLES;
-
-    this.bone = this._randomBonePosition();
-    this.boneOwner = null;
-    this.boneVisible = true;
-    this.boneRespawnTimer = 0;
-    this.boneDropCooldown = 0;
 
     this.phase = 'lobby';
     this.winner = null;
+    this.selectedGameType = 'keepaway';
+    this.gameMode = null;
 
     this._interval = null;
     this._lastTime = Date.now();
   }
+
+  // --- Player management ---
 
   addPlayer(socket, name, characterId) {
     if (this.players.size >= 8) return false;
@@ -71,11 +43,21 @@ class GameRoom {
     this.io.to(this.code).emit('room:update', this._roomState());
   }
 
+  setGameType(gameType) {
+    if (this.phase !== 'lobby') return;
+    if (!isValidGameType(gameType)) return;
+    this.selectedGameType = gameType;
+    this.io.to(this.code).emit('room:update', this._roomState());
+  }
+
   removePlayer(socketId) {
     const player = this.players.get(socketId);
     if (!player) return;
 
-    if (this.boneOwner === socketId) this._dropBone(player);
+    // Let game mode clean up
+    if (this.gameMode) {
+      this.gameMode.onPlayerRemoved(socketId);
+    }
 
     this.players.delete(socketId);
     this.playerOrder = this.playerOrder.filter(id => id !== socketId);
@@ -87,6 +69,8 @@ class GameRoom {
     }
   }
 
+  // --- Game lifecycle ---
+
   startGame() {
     if (this.phase !== 'lobby') return;
     if (this.players.size < 2) return;
@@ -94,25 +78,31 @@ class GameRoom {
     this.phase = 'playing';
     this.winner = null;
 
+    // Create game mode
+    this.gameMode = createGameMode(this.selectedGameType, this);
+
+    // Get obstacles from game mode
+    const obstacles = this.gameMode.getObstacles();
+
+    // Reset player positions in circle
     this.playerOrder.forEach((id, idx) => {
       const p = this.players.get(id);
-      p.score = 0;
-      p.hasBone = false;
+      p.reset();
       p.x = MAP_WIDTH / 2 + Math.cos((idx / this.players.size) * Math.PI * 2) * 180;
       p.y = MAP_HEIGHT / 2 + Math.sin((idx / this.players.size) * Math.PI * 2) * 150;
     });
 
-    // Spawn bone at safe position (avoid pond at 440-520, 230-310)
-    this.bone = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 - 60 };
-    this.boneOwner = null;
-    this.boneVisible = true;
-    this.boneDropCooldown = 1.5; // Grace period: nobody can pick up for 1.5s
+    // Initialize game mode
+    this.gameMode.init(this.players, this.playerOrder);
 
-    this.io.to(this.code).emit('game:start', {
+    // Emit game:start with mode-specific payload
+    const startPayload = {
       mapWidth: MAP_WIDTH,
       mapHeight: MAP_HEIGHT,
-      obstacles: this.obstacles,
-    });
+      gameType: this.selectedGameType,
+      ...this.gameMode.getStartPayload(),
+    };
+    this.io.to(this.code).emit('game:start', startPayload);
 
     this._lastTime = Date.now();
     this._interval = setInterval(() => this._tick(), 1000 / TICK_RATE);
@@ -124,102 +114,45 @@ class GameRoom {
     player.setInput(input.dx || 0, input.dy || 0, !!input.dash);
   }
 
+  // --- Tick ---
+
   _tick() {
     const now = Date.now();
     const dt = Math.min((now - this._lastTime) / 1000, 0.1);
     this._lastTime = now;
 
-    // Update all players (with obstacles)
+    // Get obstacles from game mode
+    const obstacles = this.gameMode ? this.gameMode.getObstacles() : null;
+
+    // Update all players
     for (const player of this.players.values()) {
-      player.update(dt, MAP_WIDTH, MAP_HEIGHT, this.obstacles);
+      if (player.isEliminated) continue; // Skip eliminated players
+      player.update(dt, MAP_WIDTH, MAP_HEIGHT, obstacles);
     }
 
-    // Bone respawn
-    if (!this.boneVisible) {
-      this.boneRespawnTimer -= dt;
-      if (this.boneRespawnTimer <= 0) {
-        this.boneVisible = true;
-        this.bone = this._randomBonePosition();
-        this.io.to(this.code).emit('game:event', { type: 'bone_spawned', bone: this.bone });
-      }
-    }
+    // Run game mode tick
+    if (this.gameMode) {
+      const result = this.gameMode.tick(dt, this.players, this.playerOrder);
 
-    // Bone drop cooldown
-    if (this.boneDropCooldown > 0) this.boneDropCooldown -= dt;
-
-    // Bone pickup
-    if (this.boneVisible && !this.boneOwner && this.boneDropCooldown <= 0) {
-      for (const player of this.players.values()) {
-        if (this._dist(player, this.bone) < BONE_PICKUP_RADIUS) {
-          this.boneOwner = player.id;
-          player.hasBone = true;
-          this.boneVisible = false;
-          this.io.to(this.code).emit('game:event', {
-            type: 'bone_taken',
-            playerId: player.id,
-          });
-          break;
+      // Emit game events
+      if (result.events) {
+        for (const ev of result.events) {
+          this.io.to(this.code).emit('game:event', ev);
         }
       }
-    }
 
-    // Dash hit detection + knockback
-    for (const attacker of this.players.values()) {
-      if (!attacker.isDashing || !this.boneOwner || attacker.id === this.boneOwner) continue;
-
-      const victim = this.players.get(this.boneOwner);
-      if (!victim) continue;
-
-      if (this._dist(attacker, victim) < DASH_HIT_RADIUS) {
-        // Apply knockback to victim
-        victim.applyKnockback(attacker.x, attacker.y);
-        // Drop bone offset toward attacker so attacker can grab it
-        this._dropBoneToward(victim, attacker);
-        this.io.to(this.code).emit('game:event', {
-          type: 'bone_dropped',
-          attackerId: attacker.id,
-          victimId: victim.id,
-          bone: this.bone,
-        });
+      // Check winner
+      if (result.winner) {
+        this._endGame(result.winner);
+        return;
       }
     }
 
-    // Score
-    if (this.boneOwner) {
-      const holder = this.players.get(this.boneOwner);
-      if (holder) {
-        holder.score += SCORE_PER_SECOND * dt;
-        if (holder.score >= WIN_SCORE) {
-          this._endGame(holder.id);
-          return;
-        }
-      }
-    }
-
+    // Broadcast state
     this.io.to(this.code).emit('game:state', this._gameState());
   }
 
-  _dropBone(player) {
-    player.hasBone = false;
-    this.boneOwner = null;
-    this.bone = { x: player.x, y: player.y };
-    this.boneVisible = true;
-    this.boneDropCooldown = 0.5;
-  }
-
-  _dropBoneToward(victim, attacker) {
-    victim.hasBone = false;
-    this.boneOwner = null;
-    // Place bone 35px toward attacker from victim
-    const dx = attacker.x - victim.x;
-    const dy = attacker.y - victim.y;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const boneX = Math.max(30, Math.min(MAP_WIDTH - 30, victim.x + (dx / len) * 35));
-    const boneY = Math.max(30, Math.min(MAP_HEIGHT - 30, victim.y + (dy / len) * 35));
-    this.bone = { x: boneX, y: boneY };
-    this.boneVisible = true;
-    this.boneDropCooldown = 0.5;
-  }
+  // --- End game ---
 
   _endGame(winnerId) {
     if (this._interval) {
@@ -228,70 +161,55 @@ class GameRoom {
     }
 
     const winnerPlayer = winnerId ? this.players.get(winnerId) : null;
+    const scores = this.gameMode
+      ? this.gameMode.getScoreList(this.players, this.playerOrder)
+      : this._defaultScoreList();
+
     this.io.to(this.code).emit('game:end', {
       winnerId,
       winnerName: winnerPlayer ? winnerPlayer.name : null,
-      scores: this._scoreList(),
+      scores,
     });
 
-    // Return to lobby so players can restart
     this.phase = 'lobby';
     this.winner = winnerId;
+    this.gameMode = null;
     this.io.to(this.code).emit('room:update', this._roomState());
   }
 
-  _randomBonePosition() {
-    const margin = 60;
-    let x, y, valid;
-    // Ensure bone doesn't spawn inside an obstacle
-    for (let attempt = 0; attempt < 20; attempt++) {
-      x = margin + Math.random() * (MAP_WIDTH - margin * 2);
-      y = margin + Math.random() * (MAP_HEIGHT - margin * 2);
-      valid = true;
-      for (const obs of this.obstacles) {
-        if (x >= obs.x - 20 && x <= obs.x + obs.w + 20 &&
-            y >= obs.y - 20 && y <= obs.y + obs.h + 20) {
-          valid = false;
-          break;
-        }
-      }
-      if (valid) break;
-    }
-    return { x, y };
-  }
-
-  _dist(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
+  // --- State ---
 
   _gameState() {
-    return {
-      players: this.playerOrder.map(id => this.players.get(id).serialize()),
-      bone: (this.boneVisible && !this.boneOwner) ? this.bone : null,
-      boneOwner: this.boneOwner,
+    const base = {
+      players: this.playerOrder.map(id => this.players.get(id)?.serialize()).filter(Boolean),
       phase: this.phase,
+      gameType: this.selectedGameType,
     };
+
+    // Merge game-mode-specific state
+    if (this.gameMode) {
+      Object.assign(base, this.gameMode.getState());
+    }
+
+    return base;
   }
 
   _roomState() {
     return {
       code: this.code,
       phase: this.phase,
-      players: this.playerOrder.map(id => ({
-        id,
-        name: this.players.get(id).name,
-        color: this.players.get(id).color,
-        characterId: this.players.get(id).characterId,
-      })),
+      selectedGameType: this.selectedGameType,
+      players: this.playerOrder.map(id => {
+        const p = this.players.get(id);
+        return p ? { id, name: p.name, color: p.color, characterId: p.characterId } : null;
+      }).filter(Boolean),
     };
   }
 
-  _scoreList() {
+  _defaultScoreList() {
     return this.playerOrder.map(id => {
       const p = this.players.get(id);
-      return { id, name: p.name, score: Math.floor(p.score) };
+      return { id, name: p?.name || '?', score: Math.floor(p?.score || 0) };
     }).sort((a, b) => b.score - a.score);
   }
 
