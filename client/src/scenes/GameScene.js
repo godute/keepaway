@@ -94,6 +94,9 @@ export class GameScene extends Phaser.Scene {
     // --- Emoji bar ---
     this._createEmojiBar();
 
+    // --- Fullscreen + landscape lock on mobile ---
+    this._requestLandscape();
+
     // --- Socket listeners ---
     if (this._onGameStartBound) socket.off('game:start', this._onGameStartBound);
     if (this._onGameStateBound) socket.off('game:state', this._onGameStateBound);
@@ -695,6 +698,36 @@ export class GameScene extends Phaser.Scene {
     this._emojiBar = bar;
   }
 
+  // --- Fullscreen + landscape orientation lock ---
+
+  async _requestLandscape() {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (!isMobile) return;
+    try {
+      const el = document.documentElement;
+      const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (rfs) {
+        await rfs.call(el);
+        // Once in fullscreen, lock orientation
+        if (screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock('landscape').catch(() => {});
+        }
+      }
+    } catch (e) { /* user denied or unsupported */ }
+  }
+
+  _exitLandscape() {
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        const efs = document.exitFullscreen || document.webkitExitFullscreen;
+        if (efs) efs.call(document);
+      }
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
+    } catch (e) {}
+  }
+
   // --- Speech bubble (for emoji) ---
 
   _showBubble(playerId, content, fontSize, duration) {
@@ -842,6 +875,7 @@ export class GameScene extends Phaser.Scene {
     if (this._onGameEventBound) socket.off('game:event', this._onGameEventBound);
     if (this._onGameEndBound) socket.off('game:end', this._onGameEndBound);
 
+    this._exitLandscape();
     if (this._lobbyBtn) { this._lobbyBtn.remove(); this._lobbyBtn = null; }
     if (this._emojiBar) { this._emojiBar.remove(); this._emojiBar = null; }
     if (this.modeRenderer) { try { this.modeRenderer.destroy(); } catch (e) {} this.modeRenderer = null; }
