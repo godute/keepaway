@@ -24,26 +24,221 @@
     }
     canvas { display: block; border-radius: 12px; }
 
-    /* Shared input styles (positioned by Phaser DOM element) */
-    .keepaway-input {
-      width: 240px; padding: 12px 16px;
+    /* ===== LOBBY OVERLAY ===== */
+    #lobby-overlay {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      z-index: 500;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #lobby-overlay.hidden { display: none; }
+
+    .lobby-panel {
+      width: 92%; max-width: 400px;
+      background: rgba(26, 22, 64, 0.92);
+      border: 2px solid rgba(61, 47, 127, 0.6);
+      border-radius: 24px;
+      padding: 28px 24px;
+      backdrop-filter: blur(12px);
+      margin: 20px auto;
+    }
+
+    .lobby-title {
+      font-family: 'Black Han Sans', 'Jua', sans-serif;
+      font-size: 42px;
+      color: #ffd700;
+      text-align: center;
+      text-shadow: 0 0 30px rgba(255,215,0,0.3);
+      margin-bottom: 2px;
+    }
+    .lobby-poodle {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+    .lobby-subtitle {
+      text-align: center;
+      color: #bbbbdd;
+      font-size: 15px;
+      margin-bottom: 24px;
+    }
+
+    .lobby-input {
+      display: block;
+      width: 100%;
+      padding: 14px 18px;
       border-radius: 25px;
-      border: 2px solid rgba(255,215,0,0.5);
+      border: 2px solid rgba(255,215,0,0.4);
       background: rgba(15, 12, 41, 0.85);
       backdrop-filter: blur(8px);
       color: #fff;
       font-family: 'Jua', sans-serif;
-      font-size: 17px; text-align: center;
+      font-size: 17px;
+      text-align: center;
       outline: none;
       transition: border-color 0.3s, box-shadow 0.3s;
+      margin-bottom: 16px;
     }
-    .keepaway-input:focus {
+    .lobby-input:focus {
       border-color: #ffd700;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      box-shadow: 0 0 20px rgba(255,215,0,0.25);
     }
-    .keepaway-input::placeholder { color: rgba(255,255,255,0.4); }
+    .lobby-input::placeholder { color: rgba(255,255,255,0.35); }
 
-    /* Dash button */
+    .lobby-btns {
+      display: flex; gap: 12px;
+      margin-bottom: 12px;
+    }
+    .lobby-btn {
+      flex: 1;
+      padding: 14px 8px;
+      border: none; border-radius: 25px;
+      color: #fff;
+      font-family: 'Jua', sans-serif;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.1s, filter 0.15s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lobby-btn:active { transform: scale(0.95); }
+    .lobby-btn.red { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+    .lobby-btn.red:hover { filter: brightness(1.15); }
+    .lobby-btn.blue { background: linear-gradient(135deg, #3498db, #2980b9); }
+    .lobby-btn.blue:hover { filter: brightness(1.15); }
+    .lobby-btn.green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+    .lobby-btn.green:hover { filter: brightness(1.15); }
+    .lobby-btn.orange { background: linear-gradient(135deg, #f39c12, #e67e22); }
+    .lobby-btn.orange:hover { filter: brightness(1.15); }
+    .lobby-btn.small { padding: 10px 20px; font-size: 14px; flex: none; }
+
+    #join-section { display: none; }
+    #join-section .lobby-input {
+      letter-spacing: 8px;
+      text-transform: uppercase;
+    }
+
+    /* --- In-Room View --- */
+    #lobby-room { display: none; }
+
+    .room-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .back-btn {
+      background: none; border: none;
+      color: #8888aa; font-family: 'Jua', sans-serif; font-size: 14px;
+      cursor: pointer; padding: 4px 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .back-btn:hover { color: #ffffff; }
+    .room-badge {
+      color: #aaffaa;
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .char-label {
+      text-align: center;
+      color: #ffd700;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .char-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .char-card {
+      position: relative;
+      background: rgba(42, 36, 96, 0.6);
+      border: 2px solid rgba(61, 47, 127, 0.3);
+      border-radius: 14px;
+      padding: 12px 4px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.2s, background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .char-card:active { transform: scale(0.96); }
+    .char-card:hover { background: rgba(58, 52, 128, 0.7); }
+    .char-card.selected {
+      border-color: #ffd700;
+      background: rgba(255, 215, 0, 0.15);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+    }
+    .char-card .char-emoji { font-size: 28px; line-height: 1.2; }
+    .char-card .char-name {
+      font-size: 12px; color: #ccccdd;
+      margin-top: 4px;
+    }
+    .char-card.selected .char-name { color: #ffd700; }
+    .char-card .char-check {
+      position: absolute; top: 4px; right: 6px;
+      color: #ffd700; font-size: 14px; font-weight: bold;
+      display: none;
+    }
+    .char-card.selected .char-check { display: block; }
+
+    .room-divider {
+      border: none;
+      border-top: 1px solid rgba(61, 47, 127, 0.5);
+      margin: 14px 0;
+    }
+
+    .players-label {
+      text-align: center;
+      color: #bbbbdd;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .player-list {
+      text-align: center;
+      color: #ffffff;
+      font-size: 15px;
+      line-height: 1.8;
+      min-height: 30px;
+      margin-bottom: 16px;
+    }
+
+    .room-footer {
+      text-align: center;
+    }
+    #wait-text {
+      color: #8888aa;
+      font-size: 13px;
+    }
+    #btn-start {
+      display: none;
+      width: 100%;
+    }
+
+    #lobby-status {
+      text-align: center;
+      color: #ff8888;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    /* Ambient paw prints */
+    .paw-ambient {
+      position: fixed;
+      font-size: 24px;
+      opacity: 0.06;
+      pointer-events: none;
+      animation: pawFloat 6s ease-in-out infinite alternate;
+    }
+    @keyframes pawFloat {
+      from { transform: translateY(0) rotate(0deg); opacity: 0.04; }
+      to { transform: translateY(-40px) rotate(15deg); opacity: 0.1; }
+    }
+
+    /* ===== DASH BUTTON ===== */
     #dash-btn {
       position: fixed;
       right: 24px; bottom: 50px;
@@ -72,6 +267,65 @@
 </head>
 <body>
   <div id="game-container"></div>
+
+  <!-- ===== LOBBY OVERLAY ===== -->
+  <div id="lobby-overlay">
+    <!-- Ambient paw prints -->
+    <div class="paw-ambient" style="top:10%;left:8%;animation-delay:0s">🐾</div>
+    <div class="paw-ambient" style="top:30%;right:12%;animation-delay:1.5s;font-size:18px">🐾</div>
+    <div class="paw-ambient" style="bottom:20%;left:15%;animation-delay:3s;font-size:30px">🐾</div>
+    <div class="paw-ambient" style="top:60%;right:8%;animation-delay:2s">🐾</div>
+    <div class="paw-ambient" style="bottom:10%;right:25%;animation-delay:4s;font-size:16px">🐾</div>
+
+    <!-- PRE-ROOM VIEW -->
+    <div id="lobby-pre">
+      <div class="lobby-panel">
+        <div class="lobby-poodle">🐩</div>
+        <div class="lobby-title">KEEPAWAY</div>
+        <div class="lobby-subtitle">황금 뼈다귀를 지켜라!</div>
+
+        <input id="name-input" class="lobby-input" placeholder="닉네임 입력" maxlength="10" />
+
+        <div class="lobby-btns">
+          <button id="btn-create" class="lobby-btn red">방 만들기</button>
+          <button id="btn-join-show" class="lobby-btn blue">방 참여</button>
+        </div>
+
+        <div id="join-section">
+          <input id="code-input" class="lobby-input" placeholder="방 코드 (4자리)" maxlength="4" />
+          <button id="btn-confirm-join" class="lobby-btn green">입장</button>
+        </div>
+
+        <div id="lobby-status"></div>
+      </div>
+    </div>
+
+    <!-- IN-ROOM VIEW -->
+    <div id="lobby-room">
+      <div class="lobby-panel">
+        <div class="room-header">
+          <button id="btn-back" class="back-btn">← 뒤로</button>
+          <div id="room-badge" class="room-badge"></div>
+        </div>
+
+        <div class="char-label">🐶 캐릭터 선택</div>
+        <div id="char-grid" class="char-grid"></div>
+
+        <hr class="room-divider" />
+
+        <div class="players-label">👥 대기실</div>
+        <div id="player-list" class="player-list"></div>
+
+        <div class="room-footer">
+          <button id="btn-start" class="lobby-btn orange">▶  게임 시작</button>
+          <div id="wait-text">호스트가 게임을 시작할 때까지 기다려주세요...</div>
+        </div>
+
+        <div id="lobby-status-room"></div>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
