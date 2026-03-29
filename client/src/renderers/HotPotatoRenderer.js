@@ -144,7 +144,7 @@ export class HotPotatoRenderer extends BaseRenderer {
 
     if (ev.type === 'bomb_transfer') {
       // Whoosh sound
-      sound.dash();
+      sound.collision();
 
       // Visual whoosh trail between old and new holder
       if (ev.fromId && ev.toId) {
@@ -163,7 +163,7 @@ export class HotPotatoRenderer extends BaseRenderer {
 
     } else if (ev.type === 'bomb_explode') {
       // Big explosion
-      sound.boneDropped();
+      sound.elimination();
       scene.cameras.main.shake(500, 0.02);
 
       const pg = ev.playerId ? scene.playerGraphics.get(ev.playerId) : null;

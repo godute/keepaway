@@ -261,6 +261,7 @@ export class GameScene extends Phaser.Scene {
   // --- Game start ---
 
   _onGameStart(data) {
+    sound.gameStart();
     if (data.obstacles) {
       this._obstacles = data.obstacles;
       this._drawObstacles();

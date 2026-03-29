@@ -100,7 +100,7 @@ export class SumoRenderer extends BaseRenderer {
 
     if (ev.type === 'sumo_eliminated') {
       // Dramatic elimination effect
-      sound.boneDropped();
+      sound.elimination();
       scene.cameras.main.shake(300, 0.012);
 
       const pg = scene.playerGraphics.get(ev.playerId);
@@ -126,7 +126,7 @@ export class SumoRenderer extends BaseRenderer {
     } else if (ev.type === 'sumo_hit') {
       // Small screen shake on hit
       scene.cameras.main.shake(100, 0.005);
-      sound.pickup();
+      sound.collision();
     }
   }
 

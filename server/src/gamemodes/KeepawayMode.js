@@ -5,26 +5,54 @@ const SCORE_PER_SECOND = 1;
 const WIN_SCORE = 30;
 const BONE_RESPAWN_DELAY = 2.0;
 
-// Map obstacles
-const OBSTACLES = [
-  { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
-  { x: 440, y: 230, w: 80, h: 80, type: 'pond' },
-  { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
-  { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
-  { x: 220, y: 330, w: 90, h: 20, type: 'fence' },
-  { x: 650, y: 190, w: 90, h: 20, type: 'fence' },
-  { x: 420, y: 80, w: 40, h: 40, type: 'bush' },
-  { x: 500, y: 420, w: 40, h: 40, type: 'bush' },
-  { x: 180, y: 230, w: 40, h: 40, type: 'bush' },
-  { x: 740, y: 280, w: 45, h: 35, type: 'rock' },
+// Map variants
+const MAP_VARIANTS = [
+  { id: 'park', obstacles: [
+    { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
+    { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
+    { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
+    { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
+    { x: 440, y: 230, w: 80, h: 80, type: 'pond' },
+    { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
+    { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
+    { x: 220, y: 330, w: 90, h: 20, type: 'fence' },
+    { x: 650, y: 190, w: 90, h: 20, type: 'fence' },
+    { x: 420, y: 80, w: 40, h: 40, type: 'bush' },
+    { x: 500, y: 420, w: 40, h: 40, type: 'bush' },
+    { x: 180, y: 230, w: 40, h: 40, type: 'bush' },
+    { x: 740, y: 280, w: 45, h: 35, type: 'rock' },
+  ]},
+  { id: 'arena', obstacles: [
+    { x: 200, y: 120, w: 90, h: 20, type: 'fence' },
+    { x: 670, y: 120, w: 90, h: 20, type: 'fence' },
+    { x: 200, y: 400, w: 90, h: 20, type: 'fence' },
+    { x: 670, y: 400, w: 90, h: 20, type: 'fence' },
+    { x: 430, y: 230, w: 100, h: 80, type: 'pond' },
+    { x: 100, y: 240, w: 45, h: 35, type: 'rock' },
+    { x: 815, y: 265, w: 45, h: 35, type: 'rock' },
+    { x: 350, y: 60, w: 40, h: 40, type: 'bush' },
+    { x: 570, y: 440, w: 40, h: 40, type: 'bush' },
+  ]},
+  { id: 'forest', obstacles: [
+    { x: 60, y: 40, w: 55, h: 55, type: 'tree' },
+    { x: 845, y: 40, w: 55, h: 55, type: 'tree' },
+    { x: 60, y: 445, w: 55, h: 55, type: 'tree' },
+    { x: 845, y: 445, w: 55, h: 55, type: 'tree' },
+    { x: 200, y: 40, w: 55, h: 55, type: 'tree' },
+    { x: 705, y: 40, w: 55, h: 55, type: 'tree' },
+    { x: 200, y: 445, w: 55, h: 55, type: 'tree' },
+    { x: 705, y: 445, w: 55, h: 55, type: 'tree' },
+    { x: 400, y: 220, w: 40, h: 40, type: 'bush' },
+    { x: 520, y: 280, w: 40, h: 40, type: 'bush' },
+    { x: 460, y: 140, w: 40, h: 40, type: 'bush' },
+    { x: 460, y: 360, w: 40, h: 40, type: 'bush' },
+  ]},
 ];
 
 class KeepawayMode extends BaseGameMode {
   init(players, playerOrder) {
-    this.bone = { x: 480, y: 210 }; // Avoid pond at center
+    this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
+    this.bone = this._randomBonePosition();
     this.boneOwner = null;
     this.boneVisible = true;
     this.boneRespawnTimer = 0;
@@ -105,11 +133,11 @@ class KeepawayMode extends BaseGameMode {
   }
 
   getStartPayload() {
-    return { obstacles: OBSTACLES };
+    return { obstacles: this.getObstacles(), mapVariant: this.mapVariant.id };
   }
 
   getObstacles() {
-    return OBSTACLES;
+    return this.mapVariant.obstacles;
   }
 
   onPlayerRemoved(socketId) {
@@ -141,7 +169,7 @@ class KeepawayMode extends BaseGameMode {
   }
 
   _randomBonePosition() {
-    const obstacles = OBSTACLES;
+    const obstacles = this.getObstacles();
     const margin = 60;
     let x, y, valid;
     for (let attempt = 0; attempt < 20; attempt++) {

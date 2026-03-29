@@ -9,8 +9,29 @@ const GRID_W = Math.floor(MAP_W / TILE_SIZE); // 48
 const GRID_H = Math.floor(MAP_H / TILE_SIZE); // 27
 const DASH_CLAIM_RADIUS = 3; // tiles around dash path to claim
 
+const MAP_VARIANTS = [
+  { id: 'open', obstacles: null },
+  { id: 'divided', obstacles: [
+    { x: 470, y: 40, w: 20, h: 180, type: 'fence' },
+    { x: 470, y: 320, w: 20, h: 180, type: 'fence' },
+    { x: 140, y: 260, w: 280, h: 20, type: 'fence' },
+    { x: 540, y: 260, w: 280, h: 20, type: 'fence' },
+  ]},
+  { id: 'scattered', obstacles: [
+    { x: 200, y: 120, w: 45, h: 35, type: 'rock' },
+    { x: 700, y: 120, w: 45, h: 35, type: 'rock' },
+    { x: 200, y: 385, w: 45, h: 35, type: 'rock' },
+    { x: 700, y: 385, w: 45, h: 35, type: 'rock' },
+    { x: 440, y: 180, w: 40, h: 40, type: 'bush' },
+    { x: 480, y: 320, w: 40, h: 40, type: 'bush' },
+    { x: 340, y: 260, w: 40, h: 40, type: 'bush' },
+    { x: 580, y: 260, w: 40, h: 40, type: 'bush' },
+  ]},
+];
+
 class TerritoryMode extends BaseGameMode {
   init(players, playerOrder) {
+    this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
     this.timeRemaining = GAME_DURATION;
     // Grid: flat array, null = unclaimed, string = socketId of owner
     this.grid = new Array(GRID_W * GRID_H).fill(null);
@@ -151,7 +172,8 @@ class TerritoryMode extends BaseGameMode {
 
   getStartPayload() {
     return {
-      obstacles: null,
+      obstacles: this.getObstacles(),
+      mapVariant: this.mapVariant.id,
       gameDuration: GAME_DURATION,
       tileSize: TILE_SIZE,
       gridW: GRID_W,
@@ -160,7 +182,7 @@ class TerritoryMode extends BaseGameMode {
   }
 
   getObstacles() {
-    return null; // Open field
+    return this.mapVariant.obstacles;
   }
 
   onPlayerRemoved(socketId) {

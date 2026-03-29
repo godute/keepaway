@@ -6,8 +6,18 @@ const SHRINK_DELAY = 10; // seconds before ring starts shrinking
 const SHRINK_RATE = 3; // px/sec
 const MIN_RING_RADIUS = 80;
 
+const MAP_VARIANTS = [
+  { id: 'open', obstacles: null },
+  { id: 'pillars', obstacles: [
+    { x: 430, y: 200, w: 35, h: 35, type: 'rock' },
+    { x: 500, y: 300, w: 35, h: 35, type: 'rock' },
+    { x: 380, y: 310, w: 35, h: 35, type: 'rock' },
+  ]},
+];
+
 class SumoMode extends BaseGameMode {
   init(players, playerOrder) {
+    this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
     this.ringCenter = { x: 480, y: 270 };
     this.ringRadius = INITIAL_RING_RADIUS;
     this.shrinkTimer = SHRINK_DELAY;
@@ -88,14 +98,15 @@ class SumoMode extends BaseGameMode {
 
   getStartPayload() {
     return {
-      obstacles: null, // No obstacles in sumo
+      obstacles: this.getObstacles(),
+      mapVariant: this.mapVariant.id,
       ringRadius: INITIAL_RING_RADIUS,
       ringCenter: this.ringCenter,
     };
   }
 
   getObstacles() {
-    return null; // No obstacles
+    return this.mapVariant.obstacles;
   }
 
   onPlayerRemoved(socketId) {

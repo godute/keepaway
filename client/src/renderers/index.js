@@ -3,6 +3,7 @@ import { TagRenderer } from './TagRenderer.js';
 import { SumoRenderer } from './SumoRenderer.js';
 import { HotPotatoRenderer } from './HotPotatoRenderer.js';
 import { TerritoryRenderer } from './TerritoryRenderer.js';
+import { DodgeballRenderer } from './DodgeballRenderer.js';
 
 const RENDERER_MAP = {
   keepaway: KeepawayRenderer,
@@ -10,6 +11,7 @@ const RENDERER_MAP = {
   sumo: SumoRenderer,
   hotpotato: HotPotatoRenderer,
   territory: TerritoryRenderer,
+  dodgeball: DodgeballRenderer,
 };
 
 /**

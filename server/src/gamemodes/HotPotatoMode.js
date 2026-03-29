@@ -4,18 +4,40 @@ const { DASH_HIT_RADIUS } = require('../Player');
 const MIN_BOMB_TIME = 12;
 const MAX_BOMB_TIME = 22;
 
-// Reuse some obstacles
-const OBSTACLES = [
-  { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
-  { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
-  { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
+const MAP_VARIANTS = [
+  { id: 'park', obstacles: [
+    { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
+    { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
+    { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
+    { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
+    { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
+    { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
+  ]},
+  { id: 'pillars', obstacles: [
+    { x: 200, y: 140, w: 45, h: 35, type: 'rock' },
+    { x: 460, y: 140, w: 45, h: 35, type: 'rock' },
+    { x: 720, y: 140, w: 45, h: 35, type: 'rock' },
+    { x: 200, y: 365, w: 45, h: 35, type: 'rock' },
+    { x: 460, y: 365, w: 45, h: 35, type: 'rock' },
+    { x: 720, y: 365, w: 45, h: 35, type: 'rock' },
+  ]},
+  { id: 'corners', obstacles: [
+    { x: 60, y: 40, w: 55, h: 55, type: 'tree' },
+    { x: 140, y: 40, w: 40, h: 40, type: 'bush' },
+    { x: 60, y: 120, w: 40, h: 40, type: 'bush' },
+    { x: 845, y: 40, w: 55, h: 55, type: 'tree' },
+    { x: 765, y: 40, w: 40, h: 40, type: 'bush' },
+    { x: 845, y: 120, w: 40, h: 40, type: 'bush' },
+    { x: 60, y: 445, w: 55, h: 55, type: 'tree' },
+    { x: 140, y: 460, w: 40, h: 40, type: 'bush' },
+    { x: 845, y: 445, w: 55, h: 55, type: 'tree' },
+    { x: 765, y: 460, w: 40, h: 40, type: 'bush' },
+  ]},
 ];
 
 class HotPotatoMode extends BaseGameMode {
   init(players, playerOrder) {
+    this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
     this.eliminatedPlayers = new Set();
     this.roundNumber = 0;
     this.bombHolderId = null;
@@ -128,11 +150,11 @@ class HotPotatoMode extends BaseGameMode {
   }
 
   getStartPayload() {
-    return { obstacles: OBSTACLES };
+    return { obstacles: this.getObstacles(), mapVariant: this.mapVariant.id };
   }
 
   getObstacles() {
-    return OBSTACLES;
+    return this.mapVariant.obstacles;
   }
 
   onPlayerRemoved(socketId) {

@@ -87,6 +87,61 @@ class SoundManager {
     this._playTone(660, 0.06, 0.15, t);
   }
 
+  collision() {
+    if (!this._canPlay()) return;
+    const t = this.ctx.currentTime;
+    // Short impact: noise burst + low triangle
+    const dur = 0.08;
+    const noise = this._createNoise(dur);
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 400;
+    const gain = this._createGain(0.2, dur);
+    noise.connect(filter).connect(gain).connect(this.ctx.destination);
+    noise.start(t);
+    noise.stop(t + dur);
+    this._playTone(150, 0.08, 0.15, t, 'triangle');
+  }
+
+  elimination() {
+    if (!this._canPlay()) return;
+    const t = this.ctx.currentTime;
+    // Dramatic descending sawtooth
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, t);
+    osc.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(gain).connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  }
+
+  countdown() {
+    if (!this._canPlay()) return;
+    const t = this.ctx.currentTime;
+    this._playTone(1000, 0.05, 0.15, t);
+  }
+
+  spawn() {
+    if (!this._canPlay()) return;
+    const t = this.ctx.currentTime;
+    // Rising two-tone
+    this._playTone(440, 0.08, 0.2, t, 'triangle');
+    this._playTone(660, 0.1, 0.2, t + 0.07, 'triangle');
+  }
+
+  gameStart() {
+    if (!this._canPlay()) return;
+    const t = this.ctx.currentTime;
+    // Short fanfare: C5-E5-G5
+    this._playTone(523, 0.12, 0.2, t, 'triangle');
+    this._playTone(659, 0.12, 0.2, t + 0.12, 'triangle');
+    this._playTone(784, 0.2, 0.25, t + 0.24, 'triangle');
+  }
+
   // --- Helpers ---
 
   _canPlay() {

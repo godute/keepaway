@@ -4,21 +4,38 @@ const { DASH_HIT_RADIUS } = require('../Player');
 const GAME_DURATION = 60; // seconds
 const TAG_RADIUS = 45; // touch distance to transfer "it"
 
-// Reuse keepaway obstacles
-const OBSTACLES = [
-  { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
-  { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
-  { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
-  { x: 440, y: 230, w: 80, h: 80, type: 'pond' },
-  { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
-  { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
-  { x: 220, y: 330, w: 90, h: 20, type: 'fence' },
-  { x: 650, y: 190, w: 90, h: 20, type: 'fence' },
+const MAP_VARIANTS = [
+  { id: 'park', obstacles: [
+    { x: 100, y: 60, w: 55, h: 55, type: 'tree' },
+    { x: 805, y: 60, w: 55, h: 55, type: 'tree' },
+    { x: 100, y: 425, w: 55, h: 55, type: 'tree' },
+    { x: 805, y: 425, w: 55, h: 55, type: 'tree' },
+    { x: 440, y: 230, w: 80, h: 80, type: 'pond' },
+    { x: 280, y: 140, w: 45, h: 35, type: 'rock' },
+    { x: 640, y: 365, w: 45, h: 35, type: 'rock' },
+    { x: 220, y: 330, w: 90, h: 20, type: 'fence' },
+    { x: 650, y: 190, w: 90, h: 20, type: 'fence' },
+  ]},
+  { id: 'maze', obstacles: [
+    { x: 180, y: 100, w: 120, h: 20, type: 'fence' },
+    { x: 660, y: 100, w: 120, h: 20, type: 'fence' },
+    { x: 380, y: 200, w: 200, h: 20, type: 'fence' },
+    { x: 180, y: 320, w: 120, h: 20, type: 'fence' },
+    { x: 660, y: 320, w: 120, h: 20, type: 'fence' },
+    { x: 380, y: 420, w: 200, h: 20, type: 'fence' },
+    { x: 460, y: 260, w: 45, h: 35, type: 'rock' },
+  ]},
+  { id: 'open', obstacles: [
+    { x: 60, y: 60, w: 45, h: 35, type: 'rock' },
+    { x: 855, y: 60, w: 45, h: 35, type: 'rock' },
+    { x: 60, y: 445, w: 45, h: 35, type: 'rock' },
+    { x: 855, y: 445, w: 45, h: 35, type: 'rock' },
+  ]},
 ];
 
 class TagMode extends BaseGameMode {
   init(players, playerOrder) {
+    this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
     this.timeRemaining = GAME_DURATION;
     this.itTimes = {}; // socketId -> cumulative seconds as "it"
     this.tagCooldown = 0; // prevent instant tag-back
@@ -100,11 +117,11 @@ class TagMode extends BaseGameMode {
   }
 
   getStartPayload() {
-    return { obstacles: OBSTACLES, gameDuration: GAME_DURATION };
+    return { obstacles: this.getObstacles(), mapVariant: this.mapVariant.id, gameDuration: GAME_DURATION };
   }
 
   getObstacles() {
-    return OBSTACLES;
+    return this.mapVariant.obstacles;
   }
 
   onPlayerRemoved(socketId) {
