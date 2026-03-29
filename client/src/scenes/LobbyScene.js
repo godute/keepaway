@@ -246,6 +246,7 @@ export class LobbyScene extends Phaser.Scene {
   }
 
   _leaveRoom() {
+    socket.leaveRoom();
     socket.socket?.disconnect();
     this.roomCode = null;
     this.roomState = null;

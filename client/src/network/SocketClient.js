@@ -9,6 +9,8 @@ class SocketClient {
   constructor() {
     this.socket = null;
     this.listeners = new Map();
+    this._currentRoom = null; // { code, name, characterId } for auto-rejoin
+    this._setupVisibilityHandler();
   }
 
   connect() {
@@ -17,6 +19,20 @@ class SocketClient {
 
     this.socket.on('connect', () => {
       console.log('[Socket] connected:', this.socket.id);
+      // Auto-rejoin room after reconnection
+      if (this._currentRoom) {
+        const { code, name, characterId } = this._currentRoom;
+        console.log('[Socket] auto-rejoining room:', code);
+        this.socket.emit('room:join', { code, name, characterId }, (res) => {
+          if (res.ok) {
+            console.log('[Socket] auto-rejoin success');
+            this._emit('room:update', res.roomState);
+          } else {
+            console.log('[Socket] auto-rejoin failed:', res.error);
+            this._currentRoom = null;
+          }
+        });
+      }
       this._emit('connect');
     });
     this.socket.on('disconnect', () => {
@@ -30,6 +46,15 @@ class SocketClient {
     ];
     events.forEach(ev => {
       this.socket.on(ev, (data) => this._emit(ev, data));
+    });
+  }
+
+  _setupVisibilityHandler() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && this.socket && !this.socket.connected) {
+        console.log('[Socket] app resumed, reconnecting...');
+        this.socket.connect();
+      }
     });
   }
 
@@ -48,11 +73,21 @@ class SocketClient {
   }
 
   createRoom(name, characterId) {
-    return new Promise(resolve => this.socket.emit('room:create', { name, characterId }, resolve));
+    return new Promise(resolve => this.socket.emit('room:create', { name, characterId }, (res) => {
+      if (res.ok) this._currentRoom = { code: res.code, name, characterId };
+      resolve(res);
+    }));
   }
 
   joinRoom(code, name, characterId) {
-    return new Promise(resolve => this.socket.emit('room:join', { code, name, characterId }, resolve));
+    return new Promise(resolve => this.socket.emit('room:join', { code, name, characterId }, (res) => {
+      if (res.ok) this._currentRoom = { code, name, characterId };
+      resolve(res);
+    }));
+  }
+
+  leaveRoom() {
+    this._currentRoom = null;
   }
 
   selectCharacter(characterId) {

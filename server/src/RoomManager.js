@@ -35,8 +35,15 @@ class RoomManager {
       if (room.players.has(socketId)) {
         room.removePlayer(socketId);
         if (room.isEmpty()) {
-          room.destroy();
-          this.rooms.delete(code);
+          // Grace period: keep empty room alive for 30s so reconnecting players can rejoin
+          if (room._destroyTimeout) clearTimeout(room._destroyTimeout);
+          room._destroyTimeout = setTimeout(() => {
+            if (room.isEmpty()) {
+              room.destroy();
+              this.rooms.delete(code);
+              console.log(`[Room] ${code} destroyed after grace period`);
+            }
+          }, 30000);
         }
         break;
       }

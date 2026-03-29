@@ -26,6 +26,12 @@ class GameRoom {
   addPlayer(socket, name, characterId) {
     if (this.players.size >= 8) return false;
 
+    // Cancel destroy grace period if someone joins
+    if (this._destroyTimeout) {
+      clearTimeout(this._destroyTimeout);
+      this._destroyTimeout = null;
+    }
+
     const index = this.playerOrder.length;
     const player = new Player(socket.id, name, index, characterId);
     this.players.set(socket.id, player);
