@@ -71,7 +71,7 @@ class GameRoom {
 
     this.io.to(this.code).emit('room:update', this._roomState());
 
-    if (this.phase === 'playing' && this.players.size < 2) {
+    if ((this.phase === 'playing' || this.phase === 'countdown') && this.players.size < 2) {
       this._endGame(null);
     }
   }
@@ -90,7 +90,7 @@ class GameRoom {
     });
     if (nonHostIds.length > 0 && !allReady) return 'not_ready';
 
-    this.phase = 'playing';
+    this.phase = 'countdown';
     this.winner = null;
 
     // Resolve random mode to actual game type
@@ -124,8 +124,13 @@ class GameRoom {
     };
     this.io.to(this.code).emit('game:start', startPayload);
 
-    this._lastTime = Date.now();
-    this._interval = setInterval(() => this._tick(), 1000 / TICK_RATE);
+    // 3-second countdown before gameplay starts
+    this.phase = 'countdown';
+    this._countdownTimeout = setTimeout(() => {
+      this.phase = 'playing';
+      this._lastTime = Date.now();
+      this._interval = setInterval(() => this._tick(), 1000 / TICK_RATE);
+    }, 3000);
   }
 
   handleInput(socketId, input) {
@@ -175,6 +180,10 @@ class GameRoom {
   // --- End game ---
 
   _endGame(winnerId) {
+    if (this._countdownTimeout) {
+      clearTimeout(this._countdownTimeout);
+      this._countdownTimeout = null;
+    }
     if (this._interval) {
       clearInterval(this._interval);
       this._interval = null;
@@ -240,6 +249,7 @@ class GameRoom {
   }
 
   destroy() {
+    if (this._countdownTimeout) { clearTimeout(this._countdownTimeout); this._countdownTimeout = null; }
     if (this._interval) { clearInterval(this._interval); this._interval = null; }
   }
 

@@ -261,7 +261,6 @@ export class GameScene extends Phaser.Scene {
   // --- Game start ---
 
   _onGameStart(data) {
-    sound.gameStart();
     if (data.obstacles) {
       this._obstacles = data.obstacles;
       this._drawObstacles();
@@ -272,6 +271,41 @@ export class GameScene extends Phaser.Scene {
     if (this.modeRenderer?.onGameStart) {
       this.modeRenderer.onGameStart(data);
     }
+    this._showCountdown();
+  }
+
+  _showCountdown() {
+    const cx = this.cameras.main.width / 2;
+    const cy = this.cameras.main.height / 2;
+
+    const steps = [
+      { text: '3', color: '#ffffff', delay: 0 },
+      { text: '2', color: '#ffffff', delay: 1000 },
+      { text: '1', color: '#ffffff', delay: 2000 },
+      { text: '시작!', color: '#ffd700', delay: 3000 },
+    ];
+
+    steps.forEach(({ text, color, delay }) => {
+      this.time.delayedCall(delay, () => {
+        if (delay < 3000) {
+          sound.countdown();
+        } else {
+          sound.gameStart();
+        }
+        const txt = this.add.text(cx, cy, text, {
+          fontSize: '72px', fontFamily: 'Jua, sans-serif', color,
+          stroke: '#000000', strokeThickness: 6,
+        }).setOrigin(0.5).setDepth(100).setScale(2).setAlpha(1);
+
+        this.tweens.add({
+          targets: txt, scaleX: 1, scaleY: 1, duration: 400, ease: 'Back.easeOut',
+        });
+        this.tweens.add({
+          targets: txt, alpha: 0, delay: 600, duration: 300, ease: 'Power2',
+          onComplete: () => txt.destroy(),
+        });
+      });
+    });
   }
 
   // --- Obstacles ---
@@ -464,6 +498,19 @@ export class GameScene extends Phaser.Scene {
     } else if (char.earType === 'floppy') {
       parts.push(this.add.ellipse(-R + 3, 4, 14, 20, char.ear));
       parts.push(this.add.ellipse(R - 3, 4, 14, 20, char.ear));
+    } else if (char.earType === 'tall') {
+      // Rabbit: long narrow ears pointing up
+      parts.push(this.add.ellipse(-R + 6, -R - 10, 8, 22, char.ear));
+      parts.push(this.add.ellipse(R - 6, -R - 10, 8, 22, char.ear));
+      // Inner ear pink
+      parts.push(this.add.ellipse(-R + 6, -R - 10, 4, 16, 0xffb6c1, 0.6));
+      parts.push(this.add.ellipse(R - 6, -R - 10, 4, 16, 0xffb6c1, 0.6));
+    } else if (char.earType === 'tiny') {
+      // Hamster: very small round ears
+      parts.push(this.add.circle(-R + 4, -R + 4, 5, char.ear));
+      parts.push(this.add.circle(R - 4, -R + 4, 5, char.ear));
+    } else if (char.earType === 'none') {
+      // Penguin: no ears
     } else {
       parts.push(this.add.circle(-R + 4, -R + 6, 8, char.ear));
       parts.push(this.add.circle(R - 4, -R + 6, 8, char.ear));
@@ -509,6 +556,31 @@ export class GameScene extends Phaser.Scene {
     if (char.features.includes('longNose')) {
       parts.push(this.add.ellipse(0, 3, 14, 18, char.bodyHighlight, 0.5));
     }
+    if (char.features.includes('belly')) {
+      // Large white belly oval (penguin, hamster)
+      parts.push(this.add.ellipse(0, 6, R * 1.2, R * 1.1, 0xfff8f0, 0.8));
+    }
+    if (char.features.includes('blackEyeMask')) {
+      // Raccoon: dark band across eyes
+      const maskG = this.add.graphics();
+      maskG.fillStyle(0x333333, 0.7);
+      maskG.fillRoundedRect(-14, -10, 28, 10, 3);
+      parts.push(maskG);
+    }
+    if (char.features.includes('stripes')) {
+      // Raccoon: diagonal body stripes
+      const stripeG = this.add.graphics();
+      stripeG.lineStyle(2, 0x555555, 0.4);
+      stripeG.lineBetween(-R + 4, -4, -R + 14, 10);
+      stripeG.lineBetween(0, -6, 0, 10);
+      stripeG.lineBetween(R - 4, -4, R - 14, 10);
+      parts.push(stripeG);
+    }
+    if (char.features.includes('tailBushy')) {
+      // Fox: fluffy tail puff behind body
+      parts.push(this.add.circle(-R - 4, 6, 8, char.bodyHighlight, 0.7));
+      parts.push(this.add.circle(-R - 2, 2, 5, 0xffffff, 0.6));
+    }
 
     // Eyes
     parts.push(this.add.circle(-7, -5, 4, char.eyeColor));
@@ -516,8 +588,27 @@ export class GameScene extends Phaser.Scene {
     parts.push(this.add.circle(-6, -6, 1.5, 0xffffff, 0.8));
     parts.push(this.add.circle(8, -6, 1.5, 0xffffff, 0.8));
 
+    // Whiskers (cat, hamster)
+    if (char.features.includes('whiskers')) {
+      const wG = this.add.graphics();
+      wG.lineStyle(1, 0x888888, 0.6);
+      wG.lineBetween(-14, 1, -6, 0);
+      wG.lineBetween(-14, 4, -6, 3);
+      wG.lineBetween(14, 1, 6, 0);
+      wG.lineBetween(14, 4, 6, 3);
+      parts.push(wG);
+    }
+
     // Nose & mouth
-    parts.push(this.add.circle(0, 3, 3, char.noseColor));
+    if (char.features.includes('beak')) {
+      // Penguin: orange triangle beak instead of round nose
+      const beakG = this.add.graphics();
+      beakG.fillStyle(char.noseColor, 1);
+      beakG.fillTriangle(-5, 1, 5, 1, 0, 8);
+      parts.push(beakG);
+    } else {
+      parts.push(this.add.circle(0, 3, 3, char.noseColor));
+    }
     const mouth = this.add.graphics();
     mouth.lineStyle(1.5, 0x555555, 0.6);
     mouth.beginPath();

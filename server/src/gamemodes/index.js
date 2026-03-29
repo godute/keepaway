@@ -4,6 +4,7 @@ const SumoMode = require('./SumoMode');
 const HotPotatoMode = require('./HotPotatoMode');
 const TerritoryMode = require('./TerritoryMode');
 const DodgeballMode = require('./DodgeballMode');
+const HideSeekMode = require('./HideSeekMode');
 
 const GAME_MODES = {
   keepaway:  { Mode: KeepawayMode,  name: 'Keepaway',     nameKo: '뼈다귀 쟁탈전', emoji: '🦴', minPlayers: 2 },
@@ -12,6 +13,7 @@ const GAME_MODES = {
   territory: { Mode: TerritoryMode, name: 'Territory',    nameKo: '영역 칠하기',    emoji: '🎨', minPlayers: 2 },
   sumo:      { Mode: SumoMode,      name: 'Sumo',         nameKo: '씨름',           emoji: '🤼', minPlayers: 2 },
   dodgeball: { Mode: DodgeballMode, name: 'Dodgeball',   nameKo: '피구',           emoji: '🏐', minPlayers: 2 },
+  hideseek:  { Mode: HideSeekMode, name: 'Hide & Seek', nameKo: '숨바꼭질',       emoji: '🙈', minPlayers: 3 },
 };
 
 function createGameMode(gameType, room) {

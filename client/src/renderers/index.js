@@ -4,6 +4,7 @@ import { SumoRenderer } from './SumoRenderer.js';
 import { HotPotatoRenderer } from './HotPotatoRenderer.js';
 import { TerritoryRenderer } from './TerritoryRenderer.js';
 import { DodgeballRenderer } from './DodgeballRenderer.js';
+import { HideSeekRenderer } from './HideSeekRenderer.js';
 
 const RENDERER_MAP = {
   keepaway: KeepawayRenderer,
@@ -12,6 +13,7 @@ const RENDERER_MAP = {
   hotpotato: HotPotatoRenderer,
   territory: TerritoryRenderer,
   dodgeball: DodgeballRenderer,
+  hideseek: HideSeekRenderer,
 };
 
 /**

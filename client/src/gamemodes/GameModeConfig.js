@@ -5,6 +5,7 @@ export const GAME_MODES = {
   territory: { id: 'territory', name: 'Territory',  nameKo: '영역 칠하기',    emoji: '🎨', desc: '가장 넓은 영역 차지!', minPlayers: 2 },
   sumo:      { id: 'sumo',      name: 'Sumo',       nameKo: '씨름',           emoji: '🤼', desc: '링 밖으로 밀어내라!', minPlayers: 2 },
   dodgeball: { id: 'dodgeball', name: 'Dodgeball',  nameKo: '피구',           emoji: '🏐', desc: '공을 피해 살아남아라!', minPlayers: 2 },
+  hideseek:  { id: 'hideseek',  name: 'Hide & Seek', nameKo: '숨바꼭질',      emoji: '🙈', desc: '숨어라! 술래가 찾는다!', minPlayers: 3 },
   random:    { id: 'random',    name: 'Random',     nameKo: '랜덤',           emoji: '🎲', desc: '무작위 게임!',       minPlayers: 2 },
 };
 

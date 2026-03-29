@@ -41,8 +41,10 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding-bottom: env(keyboard-inset-height, 0px);
+      opacity: 1;
+      transition: opacity 0.4s ease-out;
     }
-    #lobby-overlay.hidden { display: none; }
+    #lobby-overlay.hidden { opacity: 0; pointer-events: none; }
 
     .lobby-panel {
       width: 92%; max-width: 400px;
@@ -122,6 +124,7 @@
     .lobby-btn.orange { background: linear-gradient(135deg, #f39c12, #e67e22); }
     .lobby-btn.orange:hover { filter: brightness(1.15); }
     .lobby-btn.small { padding: 10px 20px; font-size: 14px; flex: none; }
+    .lobby-btn:active { filter: brightness(0.9); transform: scale(0.97); }
 
     #join-section { display: none; }
     #join-section .lobby-input {
@@ -158,7 +161,7 @@
 
     .char-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
       margin-bottom: 16px;
     }
@@ -167,20 +170,24 @@
       background: rgba(42, 36, 96, 0.6);
       border: 2px solid rgba(61, 47, 127, 0.3);
       border-radius: 14px;
-      padding: 12px 4px 8px;
+      padding: 10px 3px 6px;
       text-align: center;
       cursor: pointer;
       transition: transform 0.1s, border-color 0.2s, background 0.2s;
       -webkit-tap-highlight-color: transparent;
     }
-    .char-card:active { transform: scale(0.96); }
+    .char-card:active { transform: scale(0.93); }
     .char-card:hover { background: rgba(58, 52, 128, 0.7); }
     .char-card.selected {
       border-color: #ffd700;
       background: rgba(255, 215, 0, 0.15);
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+      animation: selectedPulse 2s ease-in-out infinite;
     }
-    .char-card .char-emoji { font-size: 28px; line-height: 1.2; }
+    @keyframes selectedPulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.2); }
+      50% { box-shadow: 0 0 18px rgba(255, 215, 0, 0.45); }
+    }
+    .char-card .char-emoji { font-size: 24px; line-height: 1.2; }
     .char-card .char-name {
       font-size: 12px; color: #ccccdd;
       margin-top: 4px;
@@ -216,7 +223,7 @@
       transition: transform 0.1s, border-color 0.2s;
       -webkit-tap-highlight-color: transparent;
     }
-    .game-card:active { transform: scale(0.96); }
+    .game-card:active { transform: scale(0.93); }
     .game-card.selected {
       border-color: #88ddff;
       background: rgba(100, 180, 255, 0.15);
@@ -487,7 +494,7 @@
           <div id="room-badge" class="room-badge"></div>
         </div>
 
-        <div class="char-label">🐶 캐릭터 선택</div>
+        <div class="char-label">🐾 캐릭터 선택</div>
         <div id="char-grid" class="char-grid"></div>
 
         <div class="game-label">🎮 게임 선택</div>
