@@ -1,11 +1,11 @@
 // Player constants
-const PLAYER_RADIUS = 24;
+const PLAYER_RADIUS = 18;
 const PLAYER_SPEED = 220;       // px per second
 const DASH_SPEED = 600;         // px per second during dash
 const DASH_DURATION = 0.18;     // seconds
 const DASH_COOLDOWN = 1.2;      // seconds
-const BONE_PICKUP_RADIUS = 40;  // distance to auto-pick up bone
-const DASH_HIT_RADIUS = 50;     // distance for dash-hit detection
+const BONE_PICKUP_RADIUS = 35;  // distance to auto-pick up bone
+const DASH_HIT_RADIUS = 42;     // distance for dash-hit detection
 const KNOCKBACK_FORCE = 500;    // px per second
 const KNOCKBACK_DURATION = 0.35; // seconds
 
