@@ -16,8 +16,12 @@ const MAP_VARIANTS = [
 ];
 
 class SumoMode extends BaseGameMode {
-  init(players, playerOrder) {
+  constructor(room) {
+    super(room);
     this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
+  }
+
+  init(players, playerOrder) {
     this.ringCenter = { x: 480, y: 270 };
     this.ringRadius = INITIAL_RING_RADIUS;
     this.shrinkTimer = SHRINK_DELAY;

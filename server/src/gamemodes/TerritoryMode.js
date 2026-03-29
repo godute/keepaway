@@ -30,8 +30,12 @@ const MAP_VARIANTS = [
 ];
 
 class TerritoryMode extends BaseGameMode {
-  init(players, playerOrder) {
+  constructor(room) {
+    super(room);
     this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
+  }
+
+  init(players, playerOrder) {
     this.timeRemaining = GAME_DURATION;
     // Grid: flat array, null = unclaimed, string = socketId of owner
     this.grid = new Array(GRID_W * GRID_H).fill(null);

@@ -34,8 +34,12 @@ const MAP_VARIANTS = [
 ];
 
 class TagMode extends BaseGameMode {
-  init(players, playerOrder) {
+  constructor(room) {
+    super(room);
     this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
+  }
+
+  init(players, playerOrder) {
     this.timeRemaining = GAME_DURATION;
     this.itTimes = {}; // socketId -> cumulative seconds as "it"
     this.tagCooldown = 0; // prevent instant tag-back

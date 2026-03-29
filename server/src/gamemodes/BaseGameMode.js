@@ -5,6 +5,7 @@
 class BaseGameMode {
   constructor(room) {
     this.room = room; // Reference to GameRoom for access to io, code, players
+    this.mapVariant = null;
   }
 
   /** Called when game starts. Set up initial game state. */

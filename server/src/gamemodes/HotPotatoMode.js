@@ -36,8 +36,12 @@ const MAP_VARIANTS = [
 ];
 
 class HotPotatoMode extends BaseGameMode {
-  init(players, playerOrder) {
+  constructor(room) {
+    super(room);
     this.mapVariant = MAP_VARIANTS[Math.floor(Math.random() * MAP_VARIANTS.length)];
+  }
+
+  init(players, playerOrder) {
     this.eliminatedPlayers = new Set();
     this.roundNumber = 0;
     this.bombHolderId = null;
