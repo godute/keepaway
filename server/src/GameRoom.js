@@ -1,9 +1,6 @@
 const { Player } = require('./Player');
 const { createGameMode, isValidGameType, getRandomGameType } = require('./gamemodes');
-
-const MAP_WIDTH = 960;
-const MAP_HEIGHT = 540;
-const TICK_RATE = 60;
+const { MAP_WIDTH, MAP_HEIGHT, TICK_RATE } = require('./config');
 
 class GameRoom {
   constructor(code, io) {

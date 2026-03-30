@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { LobbyScene } from './scenes/LobbyScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import './pwa-init.js';
 
 const MAP_WIDTH = 960;
 const MAP_HEIGHT = 540;

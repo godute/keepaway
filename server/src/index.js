@@ -28,6 +28,21 @@ app.get('*', (req, res) => {
 
 const roomManager = new RoomManager(io);
 
+/** Helper: get the room this socket is in (O(1) via cache). */
+function getSocketRoom(socket) {
+  if (socket.currentRoom && socket.currentRoom.players.has(socket.id)) {
+    return socket.currentRoom;
+  }
+  // Fallback: linear scan (e.g. after replacePlayer changed the id)
+  for (const room of roomManager.rooms.values()) {
+    if (room.players.has(socket.id)) {
+      socket.currentRoom = room;
+      return room;
+    }
+  }
+  return null;
+}
+
 io.on('connection', (socket) => {
   console.log(`[+] connected: ${socket.id}`);
 
@@ -36,6 +51,7 @@ io.on('connection', (socket) => {
     const room = roomManager.createRoom();
     const ok = room.addPlayer(socket, name, characterId);
     if (ok) {
+      socket.currentRoom = room;
       cb({ ok: true, code: room.code, roomState: room._roomState() });
     } else {
       cb({ ok: false, error: 'Could not create room' });
@@ -50,17 +66,14 @@ io.on('connection', (socket) => {
     if (room.phase !== 'lobby') return cb({ ok: false, error: 'Game already started' });
 
     const ok = room.addPlayer(socket, name, characterId);
+    if (ok) socket.currentRoom = room;
     cb({ ok, code: room.code, roomState: room._roomState() });
   });
 
   // Change character in lobby
   socket.on('player:character', ({ characterId }) => {
-    for (const room of roomManager.rooms.values()) {
-      if (room.players.has(socket.id)) {
-        room.setPlayerCharacter(socket.id, characterId);
-        break;
-      }
-    }
+    const room = getSocketRoom(socket);
+    if (room) room.setPlayerCharacter(socket.id, characterId);
   });
 
   // Select game mode (host only)
@@ -74,12 +87,8 @@ io.on('connection', (socket) => {
 
   // Toggle ready state
   socket.on('player:ready', () => {
-    for (const room of roomManager.rooms.values()) {
-      if (room.players.has(socket.id)) {
-        room.toggleReady(socket.id);
-        break;
-      }
-    }
+    const room = getSocketRoom(socket);
+    if (room) room.toggleReady(socket.id);
   });
 
   // Rejoin room (reconnect after app switch or return from game)
@@ -89,6 +98,7 @@ io.on('connection', (socket) => {
 
     // Already in room with current socket id
     if (room.players.has(socket.id)) {
+      socket.currentRoom = room;
       return cb && cb({ ok: true, roomState: room._roomState() });
     }
 
@@ -100,10 +110,12 @@ io.on('connection', (socket) => {
 
     if (oldSocketId) {
       room.replacePlayer(oldSocketId, socket, characterId);
+      socket.currentRoom = room;
       cb && cb({ ok: true, roomState: room._roomState() });
     } else if (room.phase === 'lobby') {
       // No matching player, try normal join
       const ok = room.addPlayer(socket, name, characterId);
+      if (ok) socket.currentRoom = room;
       cb && cb({ ok, code: room.code, roomState: room._roomState() });
     } else {
       cb && cb({ ok: false, error: 'Room not found' });
@@ -131,16 +143,13 @@ io.on('connection', (socket) => {
   const ALLOWED_EMOJIS = ['😂', '👍', '🔥', '💀', '😭', '🎉'];
   socket.on('player:emoji', ({ emoji }) => {
     if (!ALLOWED_EMOJIS.includes(emoji)) return;
-    for (const room of roomManager.rooms.values()) {
-      if (room.players.has(socket.id)) {
-        const player = room.players.get(socket.id);
-        const now = Date.now();
-        if (now - player.lastEmojiTime < 1000) return; // rate limit
-        player.lastEmojiTime = now;
-        io.to(room.code).emit('game:event', { type: 'emoji', playerId: socket.id, emoji });
-        break;
-      }
-    }
+    const room = getSocketRoom(socket);
+    if (!room) return;
+    const player = room.players.get(socket.id);
+    const now = Date.now();
+    if (now - player.lastEmojiTime < 1000) return;
+    player.lastEmojiTime = now;
+    io.to(room.code).emit('game:event', { type: 'emoji', playerId: socket.id, emoji });
   });
 
   // Chat message
@@ -148,32 +157,25 @@ io.on('connection', (socket) => {
     if (!text || typeof text !== 'string') return;
     const cleaned = text.trim().replace(/<[^>]*>/g, '').slice(0, 50);
     if (!cleaned) return;
-    for (const room of roomManager.rooms.values()) {
-      if (room.players.has(socket.id)) {
-        const player = room.players.get(socket.id);
-        const now = Date.now();
-        if (now - player.lastChatTime < 1000) return; // rate limit
-        player.lastChatTime = now;
-        io.to(room.code).emit('chat:message', { playerId: socket.id, playerName: player.name, text: cleaned });
-        break;
-      }
-    }
+    const room = getSocketRoom(socket);
+    if (!room) return;
+    const player = room.players.get(socket.id);
+    const now = Date.now();
+    if (now - player.lastChatTime < 1000) return;
+    player.lastChatTime = now;
+    io.to(room.code).emit('chat:message', { playerId: socket.id, playerName: player.name, text: cleaned });
   });
 
   // Player input during game
   socket.on('player:input', (input) => {
-    roomManager.removePlayerFromAllRooms; // no-op reference (find room manually)
-    for (const room of roomManager.rooms.values()) {
-      if (room.players.has(socket.id)) {
-        room.handleInput(socket.id, input);
-        break;
-      }
-    }
+    const room = getSocketRoom(socket);
+    if (room) room.handleInput(socket.id, input);
   });
 
   socket.on('disconnect', () => {
     console.log(`[-] disconnected: ${socket.id}`);
     roomManager.removePlayerFromAllRooms(socket.id);
+    socket.currentRoom = null;
   });
 });
 

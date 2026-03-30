@@ -153,11 +153,6 @@ class TagMode extends BaseGameMode {
     }).sort((a, b) => b.score - a.score);
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = TagMode;

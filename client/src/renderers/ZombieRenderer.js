@@ -240,15 +240,4 @@ export class ZombieRenderer extends BaseRenderer {
     if (this._roleText) { this._roleText.destroy(); this._roleText = null; }
   }
 
-  _showFloatingText(x, y, msg, color = '#ffffff') {
-    const t = this.scene.add.text(x, y, msg, {
-      fontSize: '22px', color, fontFamily: 'Jua, sans-serif',
-      stroke: '#000000', strokeThickness: 4,
-    }).setOrigin(0.5).setDepth(100);
-    this.scene.tweens.add({
-      targets: t, y: y - 60, alpha: 0, scaleX: 1.3, scaleY: 1.3,
-      duration: 1200, ease: 'Power2',
-      onComplete: () => t.destroy(),
-    });
-  }
 }

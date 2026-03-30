@@ -38,6 +38,13 @@ class BaseGameMode {
     return null;
   }
 
+  /** Squared distance between two objects with x/y properties. */
+  _distSq(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return dx * dx + dy * dy;
+  }
+
   /** Return score list for game:end. Override for custom scoring. */
   getScoreList(players, playerOrder) {
     return playerOrder.map(id => {

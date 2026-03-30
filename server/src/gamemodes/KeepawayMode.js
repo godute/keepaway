@@ -1,5 +1,6 @@
 const BaseGameMode = require('./BaseGameMode');
 const { BONE_PICKUP_RADIUS, DASH_HIT_RADIUS } = require('../Player');
+const { MAP_WIDTH, MAP_HEIGHT } = require('../config');
 
 const SCORE_PER_SECOND = 1;
 const WIN_SCORE = 30;
@@ -169,8 +170,8 @@ class KeepawayMode extends BaseGameMode {
     const dx = attacker.x - victim.x;
     const dy = attacker.y - victim.y;
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const boneX = Math.max(30, Math.min(960 - 30, victim.x + (dx / len) * 35));
-    const boneY = Math.max(30, Math.min(540 - 30, victim.y + (dy / len) * 35));
+    const boneX = Math.max(30, Math.min(MAP_WIDTH - 30, victim.x + (dx / len) * 35));
+    const boneY = Math.max(30, Math.min(MAP_HEIGHT - 30, victim.y + (dy / len) * 35));
     this.bone = { x: boneX, y: boneY };
     this.boneVisible = true;
     this.boneDropCooldown = 0.5;
@@ -181,8 +182,8 @@ class KeepawayMode extends BaseGameMode {
     const margin = 60;
     let x, y, valid;
     for (let attempt = 0; attempt < 20; attempt++) {
-      x = margin + Math.random() * (960 - margin * 2);
-      y = margin + Math.random() * (540 - margin * 2);
+      x = margin + Math.random() * (MAP_WIDTH - margin * 2);
+      y = margin + Math.random() * (MAP_HEIGHT - margin * 2);
       valid = true;
       for (const obs of obstacles) {
         if (x >= obs.x - 20 && x <= obs.x + obs.w + 20 &&
@@ -196,11 +197,6 @@ class KeepawayMode extends BaseGameMode {
     return { x, y };
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = KeepawayMode;

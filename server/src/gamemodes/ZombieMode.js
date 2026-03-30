@@ -11,8 +11,7 @@ const ROAR_RADIUS_SQ = 120 * 120;
 const ROAR_SLOW_DURATION = 2.0;
 const ROAR_SLOW_FACTOR = 0.5;
 const ROAR_COOLDOWN = 5.0;
-const MAP_W = 960;
-const MAP_H = 540;
+const { MAP_WIDTH: MAP_W, MAP_HEIGHT: MAP_H } = require('../config');
 
 const MAP_VARIANTS = [
   { id: 'park', obstacles: [
@@ -291,11 +290,6 @@ class ZombieMode extends BaseGameMode {
     }).sort((a, b) => b.score - a.score);
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = ZombieMode;

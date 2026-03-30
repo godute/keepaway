@@ -176,11 +176,6 @@ class HotPotatoMode extends BaseGameMode {
     }
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = HotPotatoMode;

@@ -8,8 +8,7 @@ const SPAWN_INTERVAL_BASE = 4; // seconds
 const SPAWN_INTERVAL_MIN = 2;
 const MAX_BALLS = 8;
 const HIT_RADIUS = PLAYER_RADIUS + BALL_RADIUS;
-const MAP_W = 960;
-const MAP_H = 540;
+const { MAP_WIDTH: MAP_W, MAP_HEIGHT: MAP_H } = require('../config');
 
 const MAP_VARIANTS = [
   { id: 'park', obstacles: [
@@ -252,11 +251,6 @@ class DodgeballMode extends BaseGameMode {
     }
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = DodgeballMode;

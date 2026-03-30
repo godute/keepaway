@@ -37,6 +37,21 @@ export class BaseRenderer {
   }
 
   /**
+   * Show a floating text that rises and fades out.
+   */
+  _showFloatingText(x, y, msg, color = '#ffffff') {
+    const t = this.scene.add.text(x, y, msg, {
+      fontSize: '22px', color, fontFamily: 'Jua, sans-serif',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5);
+    this.scene.tweens.add({
+      targets: t, y: y - 60, alpha: 0, scaleX: 1.3, scaleY: 1.3,
+      duration: 1200, ease: 'Power2',
+      onComplete: () => t.destroy(),
+    });
+  }
+
+  /**
    * Cleanup all game-specific graphics and references.
    */
   destroy() {}

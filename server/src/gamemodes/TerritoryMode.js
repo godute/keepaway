@@ -3,8 +3,7 @@ const { DASH_HIT_RADIUS } = require('../Player');
 
 const GAME_DURATION = 60;
 const TILE_SIZE = 20;
-const MAP_W = 960;
-const MAP_H = 540;
+const { MAP_WIDTH: MAP_W, MAP_HEIGHT: MAP_H } = require('../config');
 const GRID_W = Math.floor(MAP_W / TILE_SIZE); // 48
 const GRID_H = Math.floor(MAP_H / TILE_SIZE); // 27
 const DASH_CLAIM_RADIUS = 3; // tiles around dash path to claim
@@ -199,11 +198,6 @@ class TerritoryMode extends BaseGameMode {
     // Don't clear their tiles — they persist as unclaimed territory
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = TerritoryMode;

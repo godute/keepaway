@@ -7,8 +7,7 @@ const SNOWBALL_RADIUS = 10;
 const SNOWBALL_LIFETIME = 3;
 const FREEZE_DURATION = 3;
 const HIT_RADIUS = PLAYER_RADIUS + SNOWBALL_RADIUS + 6; // generous hit box
-const MAP_W = 960;
-const MAP_H = 540;
+const { MAP_WIDTH: MAP_W, MAP_HEIGHT: MAP_H } = require('../config');
 
 const MAP_VARIANTS = [
   { id: 'snowfield', obstacles: [
@@ -276,11 +275,6 @@ class SnowballMode extends BaseGameMode {
     }
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = SnowballMode;

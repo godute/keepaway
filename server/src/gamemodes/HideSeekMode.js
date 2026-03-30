@@ -4,8 +4,7 @@ const { DASH_HIT_RADIUS } = require('../Player');
 const GAME_DURATION = 60;
 const HIDE_PHASE_DURATION = 5; // seconds for hiders to hide
 const SEEK_RADIUS = 150; // seeker vision radius (sent to client)
-const MAP_W = 960;
-const MAP_H = 540;
+const { MAP_WIDTH: MAP_W, MAP_HEIGHT: MAP_H } = require('../config');
 
 const MAP_VARIANTS = [
   { id: 'forest', obstacles: [
@@ -195,11 +194,6 @@ class HideSeekMode extends BaseGameMode {
     }).sort((a, b) => b.score - a.score);
   }
 
-  _distSq(a, b) {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
 }
 
 module.exports = HideSeekMode;
