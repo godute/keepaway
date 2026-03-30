@@ -62,6 +62,13 @@ export class LobbyScene extends Phaser.Scene {
     this._buildCharGrid();
     this._buildGameGrid();
 
+    // Check URL parameter for room code
+    const params = new URLSearchParams(window.location.search);
+    this._pendingRoomCode = params.get('room')?.toUpperCase() || null;
+    if (this._pendingRoomCode) {
+      window.history.replaceState({}, '', '/');
+    }
+
     // Bind buttons
     this._bindBtn('btn-create', () => this._createRoom());
     this._bindBtn('btn-join-show', () => this._showJoinInput());
@@ -69,6 +76,7 @@ export class LobbyScene extends Phaser.Scene {
     this._bindBtn('btn-back', () => this._leaveRoom());
     this._bindBtn('btn-start', () => this._startGame());
     this._bindBtn('btn-ready', () => this._toggleReady());
+    this._bindBtn('btn-share', () => this._shareRoom());
 
     // Enter key on inputs
     this._nameInput.addEventListener('keydown', (e) => {
@@ -99,6 +107,14 @@ export class LobbyScene extends Phaser.Scene {
 
     // Show correct view
     this._showPreRoom();
+
+    // Auto-fill room code from URL parameter
+    if (this._pendingRoomCode && !this._returnData.roomCode) {
+      this._joinSection.style.display = 'block';
+      this._codeInput.value = this._pendingRoomCode;
+      this._setStatus('🔗 초대 링크로 접속! 이름 입력 후 참여하세요');
+      this._pendingRoomCode = null;
+    }
 
     // Return to existing room
     if (this._returnData.roomCode) {
@@ -242,6 +258,25 @@ export class LobbyScene extends Phaser.Scene {
       this._onRoomUpdate(res.roomState);
     } else {
       this._setStatus(res.error || '참여 실패');
+    }
+  }
+
+  async _shareRoom() {
+    if (!this.roomCode) return;
+    const url = `${window.location.origin}/?room=${this.roomCode}`;
+    try {
+      // Try native share first (mobile)
+      if (navigator.share) {
+        await navigator.share({ title: 'Keepaway 같이 하자!', text: `방 코드: ${this.roomCode}`, url });
+        return;
+      }
+      // Fallback: clipboard copy
+      await navigator.clipboard.writeText(url);
+      this._setStatusRoom('📋 링크 복사됨!');
+      setTimeout(() => this._setStatusRoom(''), 2000);
+    } catch (e) {
+      // Final fallback: select text
+      prompt('링크를 복사하세요:', url);
     }
   }
 

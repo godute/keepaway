@@ -42,6 +42,34 @@ class GameRoom {
     return true;
   }
 
+  replacePlayer(oldSocketId, newSocket, characterId) {
+    const oldPlayer = this.players.get(oldSocketId);
+    if (!oldPlayer) return false;
+
+    // Cancel destroy grace period
+    if (this._destroyTimeout) {
+      clearTimeout(this._destroyTimeout);
+      this._destroyTimeout = null;
+    }
+
+    // Update player identity to new socket
+    oldPlayer.id = newSocket.id;
+    if (characterId) oldPlayer.setCharacter(characterId);
+
+    // Swap in players Map
+    this.players.delete(oldSocketId);
+    this.players.set(newSocket.id, oldPlayer);
+
+    // Update playerOrder
+    const idx = this.playerOrder.indexOf(oldSocketId);
+    if (idx >= 0) this.playerOrder[idx] = newSocket.id;
+
+    // Join socket room
+    newSocket.join(this.code);
+    this.io.to(this.code).emit('room:update', this._roomState());
+    return true;
+  }
+
   setPlayerCharacter(socketId, characterId) {
     const player = this.players.get(socketId);
     if (!player || this.phase !== 'lobby') return;

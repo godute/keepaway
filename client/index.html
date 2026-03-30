@@ -146,6 +146,15 @@
       -webkit-tap-highlight-color: transparent;
     }
     .back-btn:hover { color: #ffffff; }
+    .share-btn {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      border: none; border-radius: 16px;
+      color: #fff; font-family: 'Jua', sans-serif; font-size: 12px;
+      padding: 6px 14px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s;
+    }
+    .share-btn:active { transform: scale(0.93); }
     .room-badge {
       color: #aaffaa;
       font-size: 14px;
@@ -492,6 +501,7 @@
         <div class="room-header">
           <button id="btn-back" class="back-btn">← 뒤로</button>
           <div id="room-badge" class="room-badge"></div>
+          <button id="btn-share" class="share-btn">📋 공유</button>
         </div>
 
         <div class="char-label">🐾 캐릭터 선택</div>

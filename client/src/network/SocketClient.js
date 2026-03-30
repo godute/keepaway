@@ -23,7 +23,7 @@ class SocketClient {
       if (this._currentRoom) {
         const { code, name, characterId } = this._currentRoom;
         console.log('[Socket] auto-rejoining room:', code);
-        this.socket.emit('room:join', { code, name, characterId }, (res) => {
+        this.socket.emit('room:rejoin', { code, name, characterId }, (res) => {
           if (res.ok) {
             console.log('[Socket] auto-rejoin success');
             this._emit('room:update', res.roomState);

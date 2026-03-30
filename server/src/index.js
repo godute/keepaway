@@ -82,13 +82,32 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Rejoin room (request current state after returning from game)
-  socket.on('room:rejoin', ({ code }, cb) => {
+  // Rejoin room (reconnect after app switch or return from game)
+  socket.on('room:rejoin', ({ code, name, characterId }, cb) => {
     const room = roomManager.getRoom(code);
-    if (!room || !room.players.has(socket.id)) {
-      return cb && cb({ ok: false, error: 'Room not found' });
+    if (!room) return cb && cb({ ok: false, error: 'Room not found' });
+
+    // Already in room with current socket id
+    if (room.players.has(socket.id)) {
+      return cb && cb({ ok: true, roomState: room._roomState() });
     }
-    cb && cb({ ok: true, roomState: room._roomState() });
+
+    // Find old player entry by name and replace with new socket
+    let oldSocketId = null;
+    for (const [id, player] of room.players) {
+      if (player.name === name) { oldSocketId = id; break; }
+    }
+
+    if (oldSocketId) {
+      room.replacePlayer(oldSocketId, socket, characterId);
+      cb && cb({ ok: true, roomState: room._roomState() });
+    } else if (room.phase === 'lobby') {
+      // No matching player, try normal join
+      const ok = room.addPlayer(socket, name, characterId);
+      cb && cb({ ok, code: room.code, roomState: room._roomState() });
+    } else {
+      cb && cb({ ok: false, error: 'Room not found' });
+    }
   });
 
   // Host starts the game
