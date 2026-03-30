@@ -10,6 +10,18 @@ import sound from '../audio/SoundManager.js';
 // Default tile size in pixels
 const TILE_SIZE = 20;
 
+// High-contrast territory colors — guaranteed distinct per player index
+const TERRITORY_COLORS = [
+  0xe74c3c, // red
+  0x3498db, // blue
+  0x2ecc71, // green
+  0xf1c40f, // yellow
+  0x9b59b6, // purple
+  0xff8c00, // orange
+  0x00ced1, // dark cyan
+  0xff69b4, // hot pink
+];
+
 export class TerritoryRenderer extends BaseRenderer {
   constructor(scene) {
     super(scene);
@@ -55,12 +67,12 @@ export class TerritoryRenderer extends BaseRenderer {
   onGameState(state) {
     const scene = this.scene;
 
-    // Cache player collar colors for tile rendering
-    for (const p of state.players) {
-      if (!this._playerColors.has(p.id) && p.color) {
-        this._playerColors.set(p.id, Phaser.Display.Color.HexStringToColor(p.color).color);
+    // Assign distinct territory colors by player index (guaranteed unique)
+    state.players.forEach((p, i) => {
+      if (!this._playerColors.has(p.id)) {
+        this._playerColors.set(p.id, TERRITORY_COLORS[i % TERRITORY_COLORS.length]);
       }
-    }
+    });
 
     // Use server-provided grid dimensions if available
     if (state.gridW && state.gridH) {
@@ -133,6 +145,7 @@ export class TerritoryRenderer extends BaseRenderer {
   formatScoreboard(players, myId) {
     const tileCounts = this._computeTileCounts(players);
     const totalTiles = this._gridCols * this._gridRows;
+    const colorDots = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '🩵', '🩷'];
 
     // Sort by tile count descending
     const sorted = players.slice().sort((a, b) => {
@@ -140,11 +153,14 @@ export class TerritoryRenderer extends BaseRenderer {
     });
 
     return sorted.map((p, i) => {
-      const me = p.id === myId ? ' \u25c0' : '';
+      const me = p.id === myId ? ' ◀' : '';
       const count = tileCounts.get(p.id) || 0;
       const pct = totalTiles > 0 ? ((count / totalTiles) * 100).toFixed(0) : '0';
-      const medal = i === 0 ? '\u{1F947}' : i === 1 ? '\u{1F948}' : i === 2 ? '\u{1F949}' : '   ';
-      return `${medal} ${p.name}${me}  ${count} (${pct}%)`;
+      // Find this player's color index
+      const pIdx = players.findIndex(pp => pp.id === p.id);
+      const dot = colorDots[pIdx % colorDots.length] || '⬜';
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '   ';
+      return `${medal}${dot} ${p.name}${me}  ${count} (${pct}%)`;
     });
   }
 
@@ -167,11 +183,11 @@ export class TerritoryRenderer extends BaseRenderer {
         const owner = this._gridData[r][c];
         if (owner) {
           const color = this._playerColors.get(owner) || 0x888888;
-          g.fillStyle(color, 0.35);
+          g.fillStyle(color, 0.5);
           g.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
           // Subtle border for claimed tiles
-          g.lineStyle(1, color, 0.15);
+          g.lineStyle(1, color, 0.25);
           g.strokeRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
       }

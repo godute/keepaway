@@ -695,9 +695,18 @@ export class GameScene extends Phaser.Scene {
       const pulse = 1.05 + Math.sin(Date.now() / 150) * 0.07;
       g.container.setScale(pulse);
       g.container.setAlpha(1);
-      // Draw glow ring around bone holder
-      this._cooldownGraphic.lineStyle(3, 0xffd700, 0.5 + Math.sin(Date.now() / 200) * 0.3);
-      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 12);
+      // Outer glow aura
+      const glowAlpha = 0.15 + Math.sin(Date.now() / 300) * 0.1;
+      this._cooldownGraphic.fillStyle(0xffd700, glowAlpha);
+      this._cooldownGraphic.fillCircle(tx, ty, p.radius + 22);
+      // Pulsing ring
+      this._cooldownGraphic.lineStyle(4, 0xffd700, 0.6 + Math.sin(Date.now() / 200) * 0.3);
+      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 14);
+      // Bone icon above head
+      this._cooldownGraphic.fillStyle(0xfff8dc, 0.9);
+      this._cooldownGraphic.fillCircle(tx - 6, ty - p.radius - 20, 4);
+      this._cooldownGraphic.fillCircle(tx + 6, ty - p.radius - 20, 4);
+      this._cooldownGraphic.fillRect(tx - 6, ty - p.radius - 23, 12, 6);
     } else if (p.hasBomb) {
       // Bomb holder: red pulsing
       g.body.setFillStyle(0xff4444);

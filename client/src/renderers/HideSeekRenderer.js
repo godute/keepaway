@@ -239,6 +239,11 @@ export class HideSeekRenderer extends BaseRenderer {
     }
   }
 
+  drawPlayerScoreBar(g, p, tx, ty) {
+    // Hide score bars entirely — they reveal hider positions to seeker
+    g.scoreBar.clear();
+  }
+
   formatScoreboard(players, myId) {
     const seekerId = this._seekerId;
     const sorted = players.slice().sort((a, b) => {

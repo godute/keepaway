@@ -10,12 +10,23 @@ const GRID_H = Math.floor(MAP_H / TILE_SIZE); // 27
 const DASH_CLAIM_RADIUS = 3; // tiles around dash path to claim
 
 const MAP_VARIANTS = [
-  { id: 'open', obstacles: null },
+  { id: 'open', obstacles: [
+    { x: 440, y: 240, w: 40, h: 40, type: 'tree' },
+    { x: 200, y: 150, w: 45, h: 35, type: 'rock' },
+    { x: 700, y: 350, w: 45, h: 35, type: 'rock' },
+    { x: 150, y: 400, w: 40, h: 40, type: 'bush' },
+    { x: 750, y: 120, w: 40, h: 40, type: 'bush' },
+  ]},
   { id: 'divided', obstacles: [
-    { x: 470, y: 40, w: 20, h: 180, type: 'fence' },
-    { x: 470, y: 320, w: 20, h: 180, type: 'fence' },
-    { x: 140, y: 260, w: 280, h: 20, type: 'fence' },
-    { x: 540, y: 260, w: 280, h: 20, type: 'fence' },
+    { x: 470, y: 40, w: 20, h: 160, type: 'fence' },
+    { x: 470, y: 340, w: 20, h: 160, type: 'fence' },
+    { x: 140, y: 260, w: 260, h: 20, type: 'fence' },
+    { x: 560, y: 260, w: 260, h: 20, type: 'fence' },
+    { x: 240, y: 130, w: 40, h: 40, type: 'tree' },
+    { x: 680, y: 130, w: 40, h: 40, type: 'tree' },
+    { x: 240, y: 380, w: 40, h: 40, type: 'tree' },
+    { x: 680, y: 380, w: 40, h: 40, type: 'tree' },
+    { x: 460, y: 240, w: 45, h: 35, type: 'rock' },
   ]},
   { id: 'scattered', obstacles: [
     { x: 200, y: 120, w: 45, h: 35, type: 'rock' },
@@ -26,6 +37,10 @@ const MAP_VARIANTS = [
     { x: 480, y: 320, w: 40, h: 40, type: 'bush' },
     { x: 340, y: 260, w: 40, h: 40, type: 'bush' },
     { x: 580, y: 260, w: 40, h: 40, type: 'bush' },
+    { x: 100, y: 260, w: 40, h: 40, type: 'tree' },
+    { x: 820, y: 260, w: 40, h: 40, type: 'tree' },
+    { x: 460, y: 60, w: 45, h: 35, type: 'rock' },
+    { x: 460, y: 440, w: 45, h: 35, type: 'rock' },
   ]},
 ];
 
