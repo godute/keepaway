@@ -52,20 +52,20 @@ export class GameScene extends Phaser.Scene {
     // --- Obstacles placeholder (drawn by renderer or game:start) ---
     this._obstacleGraphics = this.add.graphics().setDepth(15);
 
-    // --- UI Panels ---
-    this._scorePanel = this.add.graphics();
+    // --- UI Panels (high depth so they're always above obstacles) ---
+    this._scorePanel = this.add.graphics().setDepth(80);
     this._scorePanel.fillStyle(0x000000, 0.55);
     this._scorePanel.fillRoundedRect(6, 6, 170, 30, 8);
     this.scoreboard = this.add.text(14, 12, '', {
       fontSize: '12px', color: '#ffffff', fontFamily: 'Jua, Consolas, monospace', lineSpacing: 3,
-    });
+    }).setDepth(80);
 
-    const badgeBg = this.add.graphics();
+    const badgeBg = this.add.graphics().setDepth(80);
     badgeBg.fillStyle(0x000000, 0.4);
     badgeBg.fillRoundedRect(W - 100, 6, 94, 26, 8);
     this.add.text(W - 53, 19, this.roomCode, {
       fontSize: '13px', color: '#ffd700', fontFamily: 'Jua, Consolas',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(80);
 
     // --- Mute button ---
     this._muteBtn = this.add.text(W - 30, H - 25, '\u{1F50A}', { fontSize: '20px' })
@@ -304,6 +304,72 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  _redrawThemedBackground(variantId) {
+    const W = this.mapWidth;
+    const H = this.mapHeight;
+    const v = variantId.toLowerCase();
+
+    // Determine theme from variant name
+    let theme = 'grass'; // default
+    if (v.includes('snow') || v.includes('frozen') || v.includes('fortress') || v.includes('ice')) theme = 'snow';
+    else if (v.includes('sand') || v.includes('desert') || v.includes('ruins')) theme = 'desert';
+    else if (v.includes('maze') || v.includes('bunker')) theme = 'stone';
+
+    if (theme === 'grass') return; // already drawn as default
+
+    // Clear and redraw with theme overlay
+    const overlay = this.add.graphics().setDepth(1);
+
+    if (theme === 'snow') {
+      // White-blue snowy ground
+      overlay.fillStyle(0xddeeff, 0.6);
+      overlay.fillRect(0, 0, W, H);
+      // Snow patches
+      for (let i = 0; i < 15; i++) {
+        const sx = Phaser.Math.Between(20, W - 20);
+        const sy = Phaser.Math.Between(20, H - 20);
+        overlay.fillStyle(0xffffff, 0.25);
+        overlay.fillCircle(sx, sy, Phaser.Math.Between(20, 45));
+      }
+      // Snowflake dots
+      for (let i = 0; i < 40; i++) {
+        overlay.fillStyle(0xffffff, 0.4);
+        overlay.fillCircle(Phaser.Math.Between(5, W - 5), Phaser.Math.Between(5, H - 5), Phaser.Math.Between(1, 3));
+      }
+    } else if (theme === 'desert') {
+      // Sandy tan ground
+      overlay.fillStyle(0xd4b896, 0.55);
+      overlay.fillRect(0, 0, W, H);
+      // Sand dune curves
+      for (let i = 0; i < 8; i++) {
+        const dy = Phaser.Math.Between(50, H - 50);
+        overlay.fillStyle(0xc4a876, 0.2);
+        for (let x = 0; x < W; x += 5) {
+          const yOff = Math.sin(x / 80 + i) * 12;
+          overlay.fillCircle(x, dy + yOff, 8);
+        }
+      }
+      // Small pebbles
+      for (let i = 0; i < 25; i++) {
+        overlay.fillStyle(0xbb9966, 0.3);
+        overlay.fillEllipse(Phaser.Math.Between(10, W - 10), Phaser.Math.Between(10, H - 10), Phaser.Math.Between(2, 5), Phaser.Math.Between(1, 3));
+      }
+    } else if (theme === 'stone') {
+      // Gray stone floor
+      overlay.fillStyle(0x888899, 0.4);
+      overlay.fillRect(0, 0, W, H);
+      // Stone tile pattern
+      const ts = 50;
+      overlay.lineStyle(1, 0x666677, 0.15);
+      for (let y = 0; y < H; y += ts) {
+        for (let x = 0; x < W; x += ts) {
+          const off = (Math.floor(y / ts) % 2) * (ts / 2);
+          overlay.strokeRect(x + off, y, ts, ts);
+        }
+      }
+    }
+  }
+
   // --- Input & Update ---
 
   update() {
@@ -338,6 +404,10 @@ export class GameScene extends Phaser.Scene {
   // --- Game start ---
 
   _onGameStart(data) {
+    // Redraw background with theme based on map variant
+    if (data.mapVariant) {
+      this._redrawThemedBackground(data.mapVariant);
+    }
     if (data.obstacles) {
       this._obstacles = data.obstacles;
       this._drawObstacles();

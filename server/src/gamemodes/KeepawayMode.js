@@ -32,6 +32,10 @@ const MAP_VARIANTS = [
     { x: 815, y: 265, w: 45, h: 35, type: 'rock' },
     { x: 350, y: 60, w: 40, h: 40, type: 'bush' },
     { x: 570, y: 440, w: 40, h: 40, type: 'bush' },
+    { x: 350, y: 260, w: 40, h: 40, type: 'bush' },
+    { x: 580, y: 240, w: 40, h: 40, type: 'bush' },
+    { x: 440, y: 120, w: 45, h: 35, type: 'rock' },
+    { x: 460, y: 380, w: 45, h: 35, type: 'rock' },
   ]},
   { id: 'forest', obstacles: [
     { x: 60, y: 40, w: 55, h: 55, type: 'tree' },

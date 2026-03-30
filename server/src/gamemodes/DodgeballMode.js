@@ -30,7 +30,11 @@ const MAP_VARIANTS = [
     { x: 300, y: 260, w: 45, h: 35, type: 'rock' },
     { x: 620, y: 260, w: 45, h: 35, type: 'rock' },
   ]},
-  { id: 'open', obstacles: [] },
+  { id: 'open', obstacles: [
+    { x: 440, y: 240, w: 45, h: 35, type: 'rock' },
+    { x: 250, y: 170, w: 40, h: 40, type: 'bush' },
+    { x: 670, y: 350, w: 40, h: 40, type: 'bush' },
+  ]},
 ];
 
 class DodgeballMode extends BaseGameMode {

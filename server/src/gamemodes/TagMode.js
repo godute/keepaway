@@ -30,6 +30,9 @@ const MAP_VARIANTS = [
     { x: 855, y: 60, w: 45, h: 35, type: 'rock' },
     { x: 60, y: 445, w: 45, h: 35, type: 'rock' },
     { x: 855, y: 445, w: 45, h: 35, type: 'rock' },
+    { x: 440, y: 240, w: 40, h: 40, type: 'bush' },
+    { x: 300, y: 180, w: 40, h: 40, type: 'tree' },
+    { x: 620, y: 340, w: 40, h: 40, type: 'tree' },
   ]},
 ];
 
