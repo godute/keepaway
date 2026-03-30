@@ -176,54 +176,131 @@ export class GameScene extends Phaser.Scene {
 
   _drawBackground(W, H) {
     const bg = this.add.graphics();
+
+    // --- Base grass gradient (vertical, dark to light green) ---
+    const steps = 12;
+    for (let i = 0; i < steps; i++) {
+      const t = i / steps;
+      const r = Math.round(0x22 + (0x34 - 0x22) * t);
+      const g = Math.round(0x6e + (0x82 - 0x6e) * t);
+      const b = Math.round(0x22 + (0x2e - 0x22) * t);
+      bg.fillStyle((r << 16) | (g << 8) | b, 1);
+      bg.fillRect(0, (H / steps) * i, W, H / steps + 1);
+    }
+
+    // --- Subtle checkerboard overlay ---
     const tileSize = 40;
     for (let r = 0; r < Math.ceil(H / tileSize); r++) {
       for (let c = 0; c < Math.ceil(W / tileSize); c++) {
-        const even = (r + c) % 2 === 0;
-        bg.fillStyle(even ? 0x2a6e2a : 0x267026, 1);
-        bg.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+        if ((r + c) % 2 === 0) {
+          bg.fillStyle(0x000000, 0.04);
+          bg.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+        }
       }
     }
 
-    // Decorations
-    for (let i = 0; i < 30; i++) {
-      const gx = Phaser.Math.Between(10, W - 10);
-      const gy = Phaser.Math.Between(10, H - 10);
-      bg.fillStyle(0x3a8a3a, 0.3);
-      bg.fillCircle(gx, gy, Phaser.Math.Between(1, 3));
+    // --- Bright grass patches (natural lawn look) ---
+    for (let i = 0; i < 10; i++) {
+      const px = Phaser.Math.Between(40, W - 40);
+      const py = Phaser.Math.Between(40, H - 40);
+      const pr = Phaser.Math.Between(30, 60);
+      bg.fillStyle(0x3a8a3a, 0.15);
+      bg.fillCircle(px, py, pr);
     }
+
+    // --- Grass blade lines (texture) ---
+    bg.lineStyle(1, 0x2a7a2a, 0.2);
+    for (let i = 0; i < 120; i++) {
+      const gx = Phaser.Math.Between(5, W - 5);
+      const gy = Phaser.Math.Between(5, H - 5);
+      const len = Phaser.Math.Between(3, 8);
+      const ang = Phaser.Math.Between(-30, 30) * (Math.PI / 180);
+      bg.lineBetween(gx, gy, gx + Math.sin(ang) * len, gy - len);
+    }
+
+    // --- Dirt path (curved brown trail across map) ---
+    const path = this.add.graphics();
+    path.fillStyle(0x8b7355, 0.18);
+    for (let x = 0; x < W; x += 6) {
+      const yOff = Math.sin(x / 120) * 40 + Math.sin(x / 60) * 15;
+      path.fillCircle(x, H / 2 + yOff, 14);
+    }
+    // Dirt specks along path
+    for (let i = 0; i < 30; i++) {
+      const dx = Phaser.Math.Between(0, W);
+      const yOff = Math.sin(dx / 120) * 40 + Math.sin(dx / 60) * 15;
+      const dy = H / 2 + yOff + Phaser.Math.Between(-18, 18);
+      path.fillStyle(0x7a6548, 0.15);
+      path.fillCircle(dx, dy, Phaser.Math.Between(1, 3));
+    }
+
+    // --- Small decorations (stones, leaves, mushrooms) ---
+    const deco = this.add.graphics();
+    // Stones
+    for (let i = 0; i < 15; i++) {
+      const sx = Phaser.Math.Between(15, W - 15);
+      const sy = Phaser.Math.Between(15, H - 15);
+      deco.fillStyle(0x888888, 0.25);
+      deco.fillEllipse(sx, sy, Phaser.Math.Between(3, 6), Phaser.Math.Between(2, 4));
+    }
+    // Fallen leaves
     for (let i = 0; i < 12; i++) {
+      const lx = Phaser.Math.Between(20, W - 20);
+      const ly = Phaser.Math.Between(20, H - 20);
+      const lc = Phaser.Math.RND.pick([0x88aa44, 0x99bb55, 0xaacc33]);
+      deco.fillStyle(lc, 0.2);
+      deco.fillEllipse(lx, ly, Phaser.Math.Between(4, 8), Phaser.Math.Between(2, 5));
+    }
+    // Flowers
+    for (let i = 0; i < 16; i++) {
       const fx = Phaser.Math.Between(20, W - 20);
       const fy = Phaser.Math.Between(20, H - 20);
-      const fc = Phaser.Math.RND.pick([0xffaaaa, 0xaaaaff, 0xffffaa, 0xffaaff]);
-      bg.fillStyle(fc, 0.15);
-      bg.fillCircle(fx, fy, Phaser.Math.Between(2, 4));
+      const fc = Phaser.Math.RND.pick([0xffaaaa, 0xffddaa, 0xaaddff, 0xffaaff, 0xffffaa]);
+      // Stem
+      deco.lineStyle(1, 0x44883a, 0.3);
+      deco.lineBetween(fx, fy + 3, fx, fy - 2);
+      // Petals
+      deco.fillStyle(fc, 0.35);
+      deco.fillCircle(fx - 2, fy - 2, 2);
+      deco.fillCircle(fx + 2, fy - 2, 2);
+      deco.fillCircle(fx, fy - 4, 2);
+      // Center
+      deco.fillStyle(0xffee44, 0.4);
+      deco.fillCircle(fx, fy - 2, 1.5);
     }
 
-    // Center circle
-    bg.lineStyle(1.5, 0xffffff, 0.08);
+    // --- Center circle marking ---
+    bg.lineStyle(1.5, 0xffffff, 0.06);
     bg.strokeCircle(W / 2, H / 2, 80);
     bg.strokeCircle(W / 2, H / 2, 40);
-    bg.fillStyle(0xffffff, 0.04);
+    bg.fillStyle(0xffffff, 0.03);
     bg.fillCircle(W / 2, H / 2, 6);
 
-    // Border
+    // --- Border (wooden fence feel) ---
     const border = this.add.graphics();
-    border.lineStyle(4, 0xffd700, 0.3);
-    border.strokeRoundedRect(2, 2, W - 4, H - 4, 10);
-    [0, 0, W, 0, 0, H, W, H].reduce((acc, v, i) => {
-      if (i % 2 === 0) acc.push([v]); else acc[acc.length - 1].push(v);
-      return acc;
-    }, []).forEach(([cx, cy]) => {
-      border.fillStyle(0xffd700, 0.2);
-      border.fillCircle(cx, cy, 6);
+    // Dark outer shadow
+    border.lineStyle(6, 0x000000, 0.15);
+    border.strokeRoundedRect(1, 1, W - 2, H - 2, 8);
+    // Brown wooden border
+    border.lineStyle(4, 0x8b6914, 0.5);
+    border.strokeRoundedRect(2, 2, W - 4, H - 4, 8);
+    // Light inner highlight
+    border.lineStyle(1.5, 0xc4a035, 0.25);
+    border.strokeRoundedRect(5, 5, W - 10, H - 10, 6);
+    // Corner flowers
+    const corners = [[12, 12], [W - 12, 12], [12, H - 12], [W - 12, H - 12]];
+    corners.forEach(([cx, cy]) => {
+      border.fillStyle(0xff8888, 0.3);
+      border.fillCircle(cx, cy, 5);
+      border.fillStyle(0xffdd44, 0.4);
+      border.fillCircle(cx, cy, 2.5);
     });
 
-    // Paw prints
+    // --- Paw prints (subtle) ---
     for (let i = 0; i < 6; i++) {
       const px = Phaser.Math.Between(50, W - 50);
       const py = Phaser.Math.Between(50, H - 50);
-      this.add.text(px, py, '\u{1F43E}', { fontSize: '18px' }).setAlpha(0.06).setAngle(Phaser.Math.Between(-40, 40));
+      this.add.text(px, py, '\u{1F43E}', { fontSize: '16px' }).setAlpha(0.05).setAngle(Phaser.Math.Between(-40, 40));
     }
   }
 
@@ -319,96 +396,168 @@ export class GameScene extends Phaser.Scene {
       const cy = obs.y + obs.h / 2;
       const type = obs.type || 'tree';
 
-      g.fillStyle(0x000000, 0.5);
-      g.fillEllipse(cx + 4, obs.y + obs.h + 8, obs.w + 12, 18);
+      // Unified shadow
+      g.fillStyle(0x000000, 0.3);
+      g.fillEllipse(cx + 3, obs.y + obs.h + 8, obs.w * 1.3 + 10, 16);
 
       if (type === 'tree') {
-        g.lineStyle(4, 0xaaff44, 0.5);
-        g.strokeCircle(cx, cy - 6, obs.w / 2 + 12);
-        g.fillStyle(0xa0642a, 1);
-        g.fillRoundedRect(cx - 12, cy + 2, 24, obs.h / 2 + 10, 5);
-        g.lineStyle(2, 0x5a3a1a, 0.8);
-        g.strokeRoundedRect(cx - 12, cy + 2, 24, obs.h / 2 + 10, 5);
-        g.fillStyle(0x55ee44, 1);
-        g.fillCircle(cx, cy - 8, obs.w / 2 + 6);
-        g.fillStyle(0x77ff66, 1);
-        g.fillCircle(cx - 12, cy - 4, obs.w / 3 + 2);
-        g.fillCircle(cx + 12, cy - 4, obs.w / 3 + 2);
-        g.fillStyle(0x88ff77, 0.9);
-        g.fillCircle(cx, cy - 18, obs.w / 3 + 2);
-        g.fillStyle(0xccffbb, 0.7);
-        g.fillCircle(cx - 8, cy - 16, 10);
-        g.fillCircle(cx + 10, cy - 12, 8);
-        g.lineStyle(3, 0xffffff, 0.5);
-        g.strokeCircle(cx, cy - 8, obs.w / 2 + 6);
+        // Ground shade ring
+        g.fillStyle(0x1a5a1a, 0.25);
+        g.fillCircle(cx, cy + obs.h / 2 + 2, obs.w / 2 + 14);
+
+        // Trunk with wood grain
+        g.fillStyle(0x8a5420, 1);
+        g.fillRoundedRect(cx - 10, cy, 20, obs.h / 2 + 12, 4);
+        g.lineStyle(1, 0x6a3a10, 0.6);
+        g.lineBetween(cx - 4, cy + 4, cx - 3, cy + obs.h / 2 + 8);
+        g.lineBetween(cx + 5, cy + 2, cx + 4, cy + obs.h / 2 + 6);
+        g.lineStyle(2, 0x5a3010, 0.8);
+        g.strokeRoundedRect(cx - 10, cy, 20, obs.h / 2 + 12, 4);
+
+        // Foliage layers (dark → light, bottom → top)
+        g.fillStyle(0x2d8a2d, 1);
+        g.fillCircle(cx, cy - 4, obs.w / 2 + 10);
+        g.fillStyle(0x3da83d, 1);
+        g.fillCircle(cx - 10, cy - 6, obs.w / 2 + 2);
+        g.fillCircle(cx + 10, cy - 6, obs.w / 2 + 2);
+        g.fillStyle(0x50c050, 1);
+        g.fillCircle(cx, cy - 12, obs.w / 2 + 4);
+        g.fillStyle(0x66dd66, 0.9);
+        g.fillCircle(cx - 6, cy - 16, obs.w / 3 + 3);
+        g.fillCircle(cx + 8, cy - 14, obs.w / 3 + 2);
+        // Light dapple highlights
+        g.fillStyle(0x88ee88, 0.6);
+        g.fillCircle(cx - 8, cy - 18, 7);
+        g.fillCircle(cx + 10, cy - 16, 6);
+        g.fillStyle(0xbbffbb, 0.4);
+        g.fillCircle(cx - 4, cy - 22, 5);
+        // Rim highlight
+        g.lineStyle(2, 0xffffff, 0.3);
+        g.strokeCircle(cx, cy - 12, obs.w / 2 + 4);
+
       } else if (type === 'rock') {
-        g.lineStyle(4, 0xeeeeff, 0.4);
-        g.strokeEllipse(cx, cy, obs.w + 14, obs.h + 14);
-        g.fillStyle(0xbbcccc, 1);
-        g.fillEllipse(cx, cy, obs.w + 6, obs.h + 6);
-        g.fillStyle(0xddeedd, 0.9);
-        g.fillEllipse(cx - 5, cy - 5, obs.w * 0.7, obs.h * 0.6);
-        g.fillStyle(0xffffff, 0.5);
-        g.fillEllipse(cx - 3, cy - 8, obs.w * 0.4, obs.h * 0.3);
-        g.lineStyle(2, 0x778888, 0.7);
-        g.lineBetween(cx - 8, cy - 3, cx + 6, cy + 8);
-        g.fillStyle(0xaabbbb, 1);
-        g.fillEllipse(cx + obs.w / 2 + 4, cy + obs.h / 3, 14, 12);
-        g.lineStyle(3, 0xffffff, 0.45);
-        g.strokeEllipse(cx, cy, obs.w + 6, obs.h + 6);
-      } else if (type === 'fence') {
-        g.lineStyle(4, 0xffcc55, 0.5);
-        g.strokeRoundedRect(obs.x - 4, obs.y - 12, obs.w + 8, obs.h + 24, 4);
-        g.fillStyle(0x996622, 1);
-        g.fillRoundedRect(obs.x + 6, obs.y - 14, 12, obs.h + 28, 3);
-        g.fillRoundedRect(obs.x + obs.w - 18, obs.y - 14, 12, obs.h + 28, 3);
-        g.fillStyle(0xddaa44, 1);
-        g.fillRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
-        g.fillStyle(0xeebb55, 0.8);
-        g.fillRoundedRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h / 2 - 1, 2);
-        g.fillStyle(0x888888, 0.9);
-        g.fillCircle(obs.x + 12, cy, 3);
-        g.fillCircle(obs.x + obs.w - 12, cy, 3);
-        g.lineStyle(2, 0xffffff, 0.35);
-        g.strokeRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
-      } else if (type === 'pond') {
-        g.lineStyle(5, 0x66ccff, 0.5);
-        g.strokeEllipse(cx, cy, obs.w + 20, obs.h + 20);
-        g.fillStyle(0xccaa66, 0.7);
-        g.fillEllipse(cx, cy, obs.w + 14, obs.h + 14);
-        g.fillStyle(0x3399ee, 1);
-        g.fillEllipse(cx, cy, obs.w + 6, obs.h + 6);
-        g.fillStyle(0x55bbff, 0.9);
-        g.fillEllipse(cx, cy, obs.w - 4, obs.h - 4);
-        g.fillStyle(0xaaeeff, 0.7);
-        g.fillEllipse(cx - 10, cy - 10, obs.w * 0.45, obs.h * 0.3);
-        g.fillStyle(0xffffff, 0.6);
-        g.fillCircle(cx - 14, cy - 12, 5);
-        g.lineStyle(2, 0xcceeFF, 0.6);
-        g.strokeEllipse(cx + 8, cy + 6, 22, 14);
-        g.fillStyle(0x55dd55, 1);
-        g.fillCircle(cx + 22, cy + 14, 10);
-        g.fillStyle(0xff88bb, 0.9);
-        g.fillCircle(cx + 22, cy + 13, 4);
-        g.lineStyle(3, 0xffffff, 0.35);
-        g.strokeEllipse(cx, cy, obs.w + 6, obs.h + 6);
-      } else if (type === 'bush') {
-        g.lineStyle(4, 0x88ff66, 0.45);
-        g.strokeEllipse(cx, cy, obs.w + 16, obs.h + 16);
-        g.fillStyle(0x55cc44, 1);
+        // Main rock body
+        g.fillStyle(0x99aabb, 1);
         g.fillEllipse(cx, cy, obs.w + 8, obs.h + 8);
-        g.fillStyle(0x66dd55, 1);
-        g.fillEllipse(cx - 8, cy - 3, obs.w * 0.7, obs.h * 0.8);
-        g.fillEllipse(cx + 8, cy + 3, obs.w * 0.7, obs.h * 0.8);
-        g.fillStyle(0x99ff88, 0.7);
-        g.fillCircle(cx - 6, cy - 10, 9);
-        g.fillCircle(cx + 10, cy - 7, 8);
-        g.fillStyle(0xff2222, 1);
-        g.fillCircle(cx + 14, cy + 5, 5);
-        g.fillCircle(cx - 12, cy + 8, 5);
-        g.fillCircle(cx + 3, cy + 12, 4.5);
-        g.lineStyle(3, 0xffffff, 0.4);
+        // Highlight (top-left lit)
+        g.fillStyle(0xccdddd, 0.9);
+        g.fillEllipse(cx - 4, cy - 4, obs.w * 0.7, obs.h * 0.6);
+        g.fillStyle(0xe8eef0, 0.6);
+        g.fillEllipse(cx - 6, cy - 8, obs.w * 0.35, obs.h * 0.25);
+        // Secondary small rock
+        g.fillStyle(0x8899aa, 1);
+        g.fillEllipse(cx + obs.w / 2 + 2, cy + obs.h / 3, 12, 10);
+        g.fillStyle(0xaabbcc, 0.7);
+        g.fillEllipse(cx + obs.w / 2, cy + obs.h / 3 - 2, 8, 6);
+        // Crack lines
+        g.lineStyle(1.5, 0x667788, 0.6);
+        g.lineBetween(cx - 6, cy - 2, cx + 8, cy + 10);
+        g.lineBetween(cx + 2, cy - 6, cx - 4, cy + 4);
+        // Moss patch
+        g.fillStyle(0x558844, 0.5);
+        g.fillEllipse(cx + obs.w / 4, cy - obs.h / 4, 10, 7);
+        // Outline
+        g.lineStyle(2, 0xddeeff, 0.35);
         g.strokeEllipse(cx, cy, obs.w + 8, obs.h + 8);
+
+      } else if (type === 'fence') {
+        // Posts (tall, darker brown)
+        g.fillStyle(0x7a5518, 1);
+        const postW = 10;
+        g.fillRoundedRect(obs.x + 4, obs.y - 16, postW, obs.h + 32, 2);
+        g.fillRoundedRect(obs.x + obs.w - 14, obs.y - 16, postW, obs.h + 32, 2);
+        // Post caps (pointed top)
+        g.fillStyle(0x6a4510, 1);
+        const p1x = obs.x + 4 + postW / 2;
+        const p2x = obs.x + obs.w - 14 + postW / 2;
+        g.fillTriangle(p1x - 6, obs.y - 16, p1x + 6, obs.y - 16, p1x, obs.y - 24);
+        g.fillTriangle(p2x - 6, obs.y - 16, p2x + 6, obs.y - 16, p2x, obs.y - 24);
+        // Planks (main body with individual boards)
+        g.fillStyle(0xcc9933, 1);
+        g.fillRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
+        // Board separators
+        g.lineStyle(1, 0x9a7722, 0.5);
+        const boards = 3;
+        for (let i = 1; i < boards; i++) {
+          const bx = obs.x + (obs.w / boards) * i;
+          g.lineBetween(bx, obs.y + 1, bx, obs.y + obs.h - 1);
+        }
+        // Wood highlight
+        g.fillStyle(0xddaa44, 0.6);
+        g.fillRoundedRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h / 2 - 2, 2);
+        // Nails
+        g.fillStyle(0x666666, 0.9);
+        g.fillCircle(obs.x + 10, cy - 3, 2.5);
+        g.fillCircle(obs.x + 10, cy + 3, 2.5);
+        g.fillCircle(obs.x + obs.w - 10, cy - 3, 2.5);
+        g.fillCircle(obs.x + obs.w - 10, cy + 3, 2.5);
+        // Rim
+        g.lineStyle(1.5, 0xffffff, 0.2);
+        g.strokeRoundedRect(obs.x, obs.y, obs.w, obs.h, 3);
+
+      } else if (type === 'pond') {
+        // Bank/mud ring
+        g.fillStyle(0xbbaa66, 0.6);
+        g.fillEllipse(cx, cy, obs.w + 16, obs.h + 16);
+        // Water body
+        g.fillStyle(0x2288cc, 1);
+        g.fillEllipse(cx, cy, obs.w + 6, obs.h + 6);
+        g.fillStyle(0x44aadd, 0.9);
+        g.fillEllipse(cx, cy, obs.w - 2, obs.h - 2);
+        // Light reflection
+        g.fillStyle(0x88ccee, 0.7);
+        g.fillEllipse(cx - 8, cy - 8, obs.w * 0.4, obs.h * 0.25);
+        g.fillStyle(0xffffff, 0.5);
+        g.fillCircle(cx - 12, cy - 10, 4);
+        // Ripple
+        g.lineStyle(1.5, 0xaaddff, 0.5);
+        g.strokeEllipse(cx + 6, cy + 4, 18, 10);
+        // Lily pad + flower
+        g.fillStyle(0x44bb44, 1);
+        g.fillCircle(cx + 18, cy + 12, 8);
+        g.fillStyle(0x338833, 0.6);
+        g.fillCircle(cx + 18, cy + 12, 4);
+        g.fillStyle(0xff88aa, 0.9);
+        g.fillCircle(cx + 18, cy + 10, 3);
+        // Outline
+        g.lineStyle(2, 0xffffff, 0.25);
+        g.strokeEllipse(cx, cy, obs.w + 6, obs.h + 6);
+
+      } else if (type === 'bush') {
+        // Dark base layer
+        g.fillStyle(0x338833, 1);
+        g.fillEllipse(cx, cy + 2, obs.w + 10, obs.h + 8);
+        // Leaf clusters (5 overlapping)
+        g.fillStyle(0x44aa44, 1);
+        g.fillEllipse(cx - 8, cy - 2, obs.w * 0.6, obs.h * 0.7);
+        g.fillEllipse(cx + 8, cy, obs.w * 0.6, obs.h * 0.7);
+        g.fillStyle(0x55cc55, 1);
+        g.fillEllipse(cx, cy - 4, obs.w * 0.7, obs.h * 0.6);
+        g.fillEllipse(cx - 10, cy + 4, obs.w * 0.5, obs.h * 0.5);
+        g.fillEllipse(cx + 10, cy + 4, obs.w * 0.5, obs.h * 0.5);
+        // Light patches
+        g.fillStyle(0x77dd77, 0.6);
+        g.fillCircle(cx - 6, cy - 8, 7);
+        g.fillCircle(cx + 8, cy - 6, 6);
+        // Berries (red)
+        g.fillStyle(0xee2222, 1);
+        g.fillCircle(cx + 12, cy + 4, 4);
+        g.fillCircle(cx - 10, cy + 6, 4);
+        g.fillCircle(cx + 2, cy + 10, 3.5);
+        // Berry highlights
+        g.fillStyle(0xff6666, 0.7);
+        g.fillCircle(cx + 11, cy + 3, 2);
+        g.fillCircle(cx - 11, cy + 5, 2);
+        // Small flowers (pink/yellow buds)
+        g.fillStyle(0xffaacc, 0.7);
+        g.fillCircle(cx - 14, cy - 4, 3);
+        g.fillCircle(cx + 14, cy - 2, 2.5);
+        g.fillStyle(0xffee44, 0.6);
+        g.fillCircle(cx - 14, cy - 4, 1.5);
+        g.fillCircle(cx + 14, cy - 2, 1.2);
+        // Rim
+        g.lineStyle(2, 0xffffff, 0.25);
+        g.strokeEllipse(cx, cy, obs.w + 10, obs.h + 8);
       }
     }
   }
