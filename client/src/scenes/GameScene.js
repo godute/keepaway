@@ -33,6 +33,14 @@ export class GameScene extends Phaser.Scene {
     this._gameStartData = data.gameData || null;
   }
 
+  preload() {
+    // Load character sprites (if available)
+    const spriteChars = []; // sprite system ready, add IDs here when assets are available
+    for (const id of spriteChars) {
+      this.load.image(`char_${id}`, `/characters/${id}.png`);
+    }
+  }
+
   create() {
     // --- Clean up stale state from previous game ---
     // (constructor only runs once; on scene restart only init+create run)
@@ -704,6 +712,12 @@ export class GameScene extends Phaser.Scene {
     const char = CHARACTERS[p.characterId] || CHARACTERS[DEFAULT_CHARACTER];
     const R = p.radius;
 
+    // --- Check if sprite exists for this character ---
+    const spriteKey = `char_${p.characterId}`;
+    if (this.textures.exists(spriteKey)) {
+      return this._createSpritePlayerGraphic(p, spriteKey, colInt, char, R, isMe);
+    }
+
     const shadow = this.add.ellipse(0, R - 2, R * 1.6, 10, 0x000000, 0.25);
     const parts = [shadow];
 
@@ -870,6 +884,60 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  _createSpritePlayerGraphic(p, spriteKey, colInt, char, R, isMe) {
+    const parts = [];
+
+    // Shadow
+    const shadow = this.add.ellipse(0, R - 2, R * 1.6, 10, 0x000000, 0.25);
+    parts.push(shadow);
+
+    // Color ring (team color)
+    const ring = this.add.circle(0, 0, R + 3, colInt);
+    parts.push(ring);
+
+    // Sprite image (scaled to fit 2*R diameter)
+    const sprite = this.add.image(0, -2, spriteKey);
+    const targetSize = R * 2.2;
+    const scale = targetSize / Math.max(sprite.width, sprite.height);
+    sprite.setScale(scale);
+    parts.push(sprite);
+
+    // Bone in mouth (hidden by default, for keepaway mode)
+    const mouthBone = this.add.container(0, R - 6);
+    mouthBone.add([
+      this.add.circle(-5, 0, 4, 0xfff8dc),
+      this.add.circle(5, 0, 4, 0xfff8dc),
+      this.add.rectangle(0, 0, 10, 5, 0xfff8dc).setOrigin(0.5),
+    ]);
+    mouthBone.setVisible(false);
+    parts.push(mouthBone);
+
+    const container = this.add.container(p.x, p.y, parts).setDepth(10);
+
+    if (isMe) {
+      const arrow = this.add.text(0, -R - 22, '\u25bc', {
+        fontSize: '16px', fontFamily: 'Jua', color: '#ffd700',
+      }).setOrigin(0.5);
+      this.tweens.add({ targets: arrow, y: -R - 16, yoyo: true, repeat: -1, duration: 500, ease: 'Sine.easeInOut' });
+      container.add(arrow);
+    }
+
+    const nameTag = this.add.container(p.x, p.y + R + 16).setDepth(10);
+    nameTag.add(this.add.text(0, 0, p.name, {
+      fontSize: '14px', color: '#ffffff', fontFamily: 'Jua, sans-serif',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5));
+
+    const scoreBar = this.add.graphics().setDepth(10);
+
+    // body reference is the sprite for tint support
+    this.playerGraphics.set(p.id, {
+      container, nameText: nameTag, scoreBar,
+      prevX: p.x, prevY: p.y, colInt, body: sprite,
+      bodyColor: 0xffffff, mouthBone, isSprite: true,
+    });
+  }
+
   _updatePlayerGraphic(p) {
     const g = this.playerGraphics.get(p.id);
     if (!g) return;
@@ -895,22 +963,32 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // Helper: set body color (works for both shapes and sprites)
+    const setBodyColor = (color) => {
+      if (g.isSprite) g.body.setTint(color);
+      else g.body.setFillStyle(color);
+    };
+    const resetBodyColor = () => {
+      if (g.isSprite) g.body.clearTint();
+      else g.body.setFillStyle(g.bodyColor);
+    };
+
     // Visual feedback
     if (p.isEliminated) {
       g.container.setAlpha(0.3);
       g.container.setScale(0.8);
     } else if (p.isKnockedBack) {
-      g.body.setFillStyle(0xff6666);
+      setBodyColor(0xff6666);
       g.container.setScale(0.9);
       g.container.setAlpha(1);
     } else if (p.isDashing) {
-      g.body.setFillStyle(0xffee44);
+      setBodyColor(0xffee44);
       g.container.setScale(1.12);
       g.container.setAlpha(1);
       this._spawnDashTrail(tx, ty, g.colInt);
     } else if (p.hasBone) {
       // Bone holder: golden glow + pulsing scale
-      g.body.setFillStyle(0xffe070);
+      setBodyColor(0xffe070);
       const pulse = 1.05 + Math.sin(Date.now() / 150) * 0.07;
       g.container.setScale(pulse);
       g.container.setAlpha(1);
@@ -928,7 +1006,7 @@ export class GameScene extends Phaser.Scene {
       this._cooldownGraphic.fillRect(tx - 6, ty - p.radius - 23, 12, 6);
     } else if (p.hasBomb) {
       // Bomb holder: red pulsing
-      g.body.setFillStyle(0xff4444);
+      setBodyColor(0xff4444);
       const pulse = 1.0 + Math.sin(Date.now() / 100) * 0.08;
       g.container.setScale(pulse);
       g.container.setAlpha(1);
@@ -936,7 +1014,7 @@ export class GameScene extends Phaser.Scene {
       this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 12);
     } else if (p.isIt) {
       // Tag "it" player: red outline
-      g.body.setFillStyle(g.bodyColor);
+      resetBodyColor();
       g.container.setScale(1);
       g.container.setAlpha(1);
       this._cooldownGraphic.lineStyle(3, 0xff4444, 0.6);
@@ -944,7 +1022,7 @@ export class GameScene extends Phaser.Scene {
     } else {
       g.container.setScale(1);
       g.container.setAlpha(1);
-      g.body.setFillStyle(g.bodyColor);
+      resetBodyColor();
     }
 
     // Bone in mouth

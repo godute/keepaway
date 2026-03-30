@@ -56,36 +56,57 @@ export class ZombieRenderer extends BaseRenderer {
       if (!pg) continue;
 
       if (zombieSet.has(p.id)) {
-        // Zombie: green tint + emoji
-        pg.container.setTint(0x77cc44);
+        // Zombie: green body tint + emoji + green ring
+        if (pg.body) {
+          if (pg.isSprite) pg.body.setTint(0x77cc44);
+          else pg.body.setFillStyle(0x77cc44);
+        }
         if (!this._zombieOverlays.has(p.id)) {
-          const emoji = scene.add.text(0, -p.radius - 20, '🧟', {
-            fontSize: '16px',
+          // Emoji above head
+          const emoji = scene.add.text(0, -p.radius - 22, '🧟', {
+            fontSize: '18px',
           }).setOrigin(0.5).setDepth(55);
           pg.container.add(emoji);
-          this._zombieOverlays.set(p.id, { emoji });
+          // Green glow ring around zombie
+          const ring = scene.add.circle(0, 0, p.radius + 6, 0x55aa33, 0).setDepth(9);
+          ring.setStrokeStyle(3, 0x77cc44, 0.6);
+          scene.tweens.add({
+            targets: ring, scaleX: 1.2, scaleY: 1.2, alpha: 0,
+            yoyo: true, repeat: -1, duration: 1000,
+          });
+          pg.container.add(ring);
+          this._zombieOverlays.set(p.id, { emoji, ring });
         }
       } else {
-        // Survivor: normal or slowed
-        if (slowedSet.has(p.id)) {
-          pg.container.setTint(0xdddd88);
-        } else {
-          pg.container.clearTint();
+        // Survivor: restore normal body color
+        if (pg.body && !slowedSet.has(p.id) && !stunnedSet.has(p.id)) {
+          if (pg.isSprite) pg.body.clearTint();
+          else pg.body.setFillStyle(pg.bodyColor);
         }
-        // Remove zombie overlay if was zombie before (shouldn't happen but safety)
+        // Slowed: yellow tint on body
+        if (slowedSet.has(p.id) && pg.body) {
+          if (pg.isSprite) pg.body.setTint(0xdddd88);
+          else pg.body.setFillStyle(0xdddd88);
+        }
+        // Remove zombie overlay if player was zombie before
         if (this._zombieOverlays.has(p.id)) {
           const ov = this._zombieOverlays.get(p.id);
+          scene.tweens.killTweensOf(ov.ring);
           ov.emoji.destroy();
+          ov.ring.destroy();
           this._zombieOverlays.delete(p.id);
         }
       }
 
       // Stun overlay
       if (stunnedSet.has(p.id)) {
-        pg.container.setTint(0xffdd44);
+        if (pg.body) {
+          if (pg.isSprite) pg.body.setTint(0xffdd44);
+          else pg.body.setFillStyle(0xffdd44);
+        }
         if (!this._stunOverlays.has(p.id)) {
-          const emoji = scene.add.text(0, -p.radius - 20, '💫', {
-            fontSize: '16px',
+          const emoji = scene.add.text(0, -p.radius - 22, '💫', {
+            fontSize: '18px',
           }).setOrigin(0.5).setDepth(55);
           const ring = scene.add.circle(0, 0, p.radius + 6, 0xffdd44, 0).setDepth(9);
           ring.setStrokeStyle(2, 0xffdd44, 0.5);
@@ -103,8 +124,6 @@ export class ZombieRenderer extends BaseRenderer {
         ov.emoji.destroy();
         ov.ring.destroy();
         this._stunOverlays.delete(p.id);
-        // Restore tint based on zombie/survivor state
-        if (!zombieSet.has(p.id)) pg.container.clearTint();
       }
     }
 

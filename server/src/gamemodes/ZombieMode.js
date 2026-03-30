@@ -79,6 +79,7 @@ class ZombieMode extends BaseGameMode {
     this.timeRemaining -= dt;
 
     // --- Zombie processing ---
+    const speedRatio = ZOMBIE_SPEED / 220; // 170/220 ≈ 0.77
     for (const zId of this.zombies) {
       const p = players.get(zId);
       if (!p) continue;
@@ -88,14 +89,11 @@ class ZombieMode extends BaseGameMode {
         p.isDashing = false;
         p.dashTimer = 0;
         p.wantsDash = false;
-        p.vx = 0;
-        p.vy = 0;
 
         // Trigger roar if cooldown ready
         const cd = this.roarCooldowns.get(zId) || 0;
         if (cd <= 0) {
           this.roarCooldowns.set(zId, ROAR_COOLDOWN);
-          // Slow all nearby survivors
           for (const sId of playerOrder) {
             if (this.zombies.has(sId)) continue;
             const s = players.get(sId);
@@ -108,15 +106,9 @@ class ZombieMode extends BaseGameMode {
         }
       }
 
-      // Clamp zombie speed
-      if (!p.isDashing) {
-        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        if (speed > ZOMBIE_SPEED) {
-          const scale = ZOMBIE_SPEED / speed;
-          p.vx *= scale;
-          p.vy *= scale;
-        }
-      }
+      // Slow zombie: scale velocity down (player.update already set vx/vy at 220px/s)
+      p.vx *= speedRatio;
+      p.vy *= speedRatio;
     }
 
     // --- Decrease roar cooldowns ---
