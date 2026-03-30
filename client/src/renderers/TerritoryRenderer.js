@@ -84,6 +84,7 @@ export class TerritoryRenderer extends BaseRenderer {
     }
 
     // Apply full grid if provided (RLE compressed: [[owner, count], ...])
+    let needsFullRedraw = false;
     if (state.fullGrid) {
       let idx = 0;
       for (const [owner, count] of state.fullGrid) {
@@ -93,11 +94,13 @@ export class TerritoryRenderer extends BaseRenderer {
           if (this._gridData[r]) this._gridData[r][c] = owner;
         }
       }
+      needsFullRedraw = true;
     }
 
     // Apply incremental changed tiles (server sends {x, y, owner} where x=col, y=row)
-    if (state.changedTiles && state.changedTiles.length > 0) {
-      for (const tile of state.changedTiles) {
+    const changed = state.changedTiles || [];
+    if (changed.length > 0) {
+      for (const tile of changed) {
         const col = tile.x;
         const row = tile.y;
         if (row >= 0 && row < this._gridRows && col >= 0 && col < this._gridCols) {
@@ -106,8 +109,12 @@ export class TerritoryRenderer extends BaseRenderer {
       }
     }
 
-    // Redraw grid
-    this._redrawGrid();
+    // Only full redraw on fullGrid sync; otherwise partial redraw for changed tiles
+    if (needsFullRedraw) {
+      this._redrawGrid();
+    } else if (changed.length > 0) {
+      this._redrawChangedTiles(changed);
+    }
 
     // Update timer
     const remaining = state.timeRemaining != null ? state.timeRemaining : 0;
@@ -123,12 +130,13 @@ export class TerritoryRenderer extends BaseRenderer {
       this._timerText.setAlpha(1);
     }
 
-    // Update tile counts
-    const tileCounts = this._computeTileCounts(state.players);
+    // Update tile counts (use server-provided counts to avoid client-side recount)
+    const serverCounts = state.tileCounts || {};
+    this._cachedTileCounts = serverCounts;
     const totalTiles = this._gridCols * this._gridRows;
     const parts = [];
     for (const p of state.players) {
-      const count = tileCounts.get(p.id) || 0;
+      const count = serverCounts[p.id] || 0;
       const pct = ((count / totalTiles) * 100).toFixed(0);
       parts.push(`${p.name}: ${count}(${pct}%)`);
     }
@@ -143,20 +151,16 @@ export class TerritoryRenderer extends BaseRenderer {
   }
 
   formatScoreboard(players, myId) {
-    const tileCounts = this._computeTileCounts(players);
+    const sc = this._cachedTileCounts || {};
     const totalTiles = this._gridCols * this._gridRows;
     const colorDots = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '🩵', '🩷'];
 
-    // Sort by tile count descending
-    const sorted = players.slice().sort((a, b) => {
-      return (tileCounts.get(b.id) || 0) - (tileCounts.get(a.id) || 0);
-    });
+    const sorted = players.slice().sort((a, b) => (sc[b.id] || 0) - (sc[a.id] || 0));
 
     return sorted.map((p, i) => {
       const me = p.id === myId ? ' ◀' : '';
-      const count = tileCounts.get(p.id) || 0;
+      const count = sc[p.id] || 0;
       const pct = totalTiles > 0 ? ((count / totalTiles) * 100).toFixed(0) : '0';
-      // Find this player's color index
       const pIdx = players.findIndex(pp => pp.id === p.id);
       const dot = colorDots[pIdx % colorDots.length] || '⬜';
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '   ';
@@ -185,11 +189,30 @@ export class TerritoryRenderer extends BaseRenderer {
           const color = this._playerColors.get(owner) || 0x888888;
           g.fillStyle(color, 0.5);
           g.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-
-          // Subtle border for claimed tiles
           g.lineStyle(1, color, 0.25);
           g.strokeRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
+      }
+    }
+  }
+
+  _redrawChangedTiles(tiles) {
+    const g = this._gridTexture;
+    for (const tile of tiles) {
+      const c = tile.x;
+      const r = tile.y;
+      if (r < 0 || r >= this._gridRows || c < 0 || c >= this._gridCols) continue;
+      // Clear the tile area (draw background color over it)
+      g.fillStyle(0x267026, 1);
+      g.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      // Draw new owner color
+      const owner = this._gridData[r]?.[c];
+      if (owner) {
+        const color = this._playerColors.get(owner) || 0x888888;
+        g.fillStyle(color, 0.5);
+        g.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        g.lineStyle(1, color, 0.25);
+        g.strokeRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
       }
     }
   }

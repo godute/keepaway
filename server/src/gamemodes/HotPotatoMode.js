@@ -90,7 +90,7 @@ class HotPotatoMode extends BaseGameMode {
       if (holder && holder.isDashing) {
         for (const other of players.values()) {
           if (other.id === this.bombHolderId || this.eliminatedPlayers.has(other.id)) continue;
-          if (this._dist(holder, other) < DASH_HIT_RADIUS) {
+          if (this._distSq(holder, other) < DASH_HIT_RADIUS * DASH_HIT_RADIUS) {
             // Transfer bomb
             holder.hasBomb = false;
             other.hasBomb = true;
@@ -176,10 +176,10 @@ class HotPotatoMode extends BaseGameMode {
     }
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

@@ -77,7 +77,7 @@ class DodgeballMode extends BaseGameMode {
       for (const victim of players.values()) {
         if (victim.id === attacker.id || this.eliminatedPlayers.has(victim.id)) continue;
         if (victim.isDashing) continue; // both dashing = no hit
-        if (this._dist(attacker, victim) < PLAYER_RADIUS * 2 + 2) {
+        if (this._distSq(attacker, victim) < (PLAYER_RADIUS * 2 + 2) * (PLAYER_RADIUS * 2 + 2)) {
           victim.applyKnockback(attacker.x, attacker.y);
           events.push({ type: 'dodgeball_push', attackerId: attacker.id, victimId: victim.id });
         }
@@ -111,8 +111,8 @@ class DodgeballMode extends BaseGameMode {
 
         const dx = p.x - ball.x;
         const dy = p.y - ball.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < HIT_RADIUS) {
+        const distSq = dx * dx + dy * dy;
+        if (distSq < HIT_RADIUS * HIT_RADIUS) {
           this.eliminatedPlayers.add(id);
           p.isEliminated = true;
           ballsToRemove.add(ball.id);
@@ -180,7 +180,7 @@ class DodgeballMode extends BaseGameMode {
       let tooClose = false;
       for (const p of players.values()) {
         if (p.isEliminated) continue;
-        if (this._dist({ x, y }, p) < 100) { tooClose = true; break; }
+        if (this._distSq({ x, y }, p) < 100 * 100) { tooClose = true; break; }
       }
       if (tooClose) continue;
 
@@ -252,10 +252,10 @@ class DodgeballMode extends BaseGameMode {
     }
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

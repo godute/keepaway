@@ -97,14 +97,13 @@ class TerritoryMode extends BaseGameMode {
       if (!attacker.isDashing) continue;
       for (const victim of players.values()) {
         if (victim.id === attacker.id) continue;
-        if (this._dist(attacker, victim) < DASH_HIT_RADIUS) {
+        if (this._distSq(attacker, victim) < DASH_HIT_RADIUS * DASH_HIT_RADIUS) {
           victim.applyKnockback(attacker.x, attacker.y);
         }
       }
     }
 
-    // Update scores
-    this._recalcCounts(playerOrder);
+    // Update scores (tileCounts updated incrementally in _claimTile)
     for (const id of playerOrder) {
       const p = players.get(id);
       if (p) p.score = this.tileCounts[id] || 0;
@@ -130,22 +129,13 @@ class TerritoryMode extends BaseGameMode {
   _claimTile(tx, ty, ownerId) {
     if (tx < 0 || tx >= GRID_W || ty < 0 || ty >= GRID_H) return;
     const idx = ty * GRID_W + tx;
-    if (this.grid[idx] !== ownerId) {
+    const prev = this.grid[idx];
+    if (prev !== ownerId) {
+      // Incremental count update
+      if (prev && this.tileCounts[prev] !== undefined) this.tileCounts[prev]--;
+      if (this.tileCounts[ownerId] !== undefined) this.tileCounts[ownerId]++;
       this.grid[idx] = ownerId;
       this.changedTiles.push({ x: tx, y: ty, owner: ownerId });
-    }
-  }
-
-  _recalcCounts(playerOrder) {
-    // Reset counts
-    for (const id of playerOrder) {
-      this.tileCounts[id] = 0;
-    }
-    for (let i = 0; i < this.grid.length; i++) {
-      const owner = this.grid[i];
-      if (owner && this.tileCounts[owner] !== undefined) {
-        this.tileCounts[owner]++;
-      }
     }
   }
 
@@ -209,10 +199,10 @@ class TerritoryMode extends BaseGameMode {
     // Don't clear their tiles — they persist as unclaimed territory
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

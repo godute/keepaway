@@ -160,8 +160,8 @@ class SnowballMode extends BaseGameMode {
         const p = players.get(id);
         if (!p || p.isDashing) continue; // dashing = invincible
 
-        const dist = this._dist(sb, p);
-        if (dist < HIT_RADIUS) {
+        const distSq = this._distSq(sb, p);
+        if (distSq < HIT_RADIUS * HIT_RADIUS) {
           // Freeze the target
           this.freezeTimers.set(id, { timer: FREEZE_DURATION, x: p.x, y: p.y });
           const count = (this.hitCounts.get(sb.ownerId) || 0) + 1;
@@ -276,10 +276,10 @@ class SnowballMode extends BaseGameMode {
     }
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

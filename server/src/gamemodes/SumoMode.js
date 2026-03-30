@@ -48,7 +48,7 @@ class SumoMode extends BaseGameMode {
 
       for (const victim of players.values()) {
         if (victim.id === attacker.id || this.eliminatedPlayers.has(victim.id)) continue;
-        if (this._dist(attacker, victim) < DASH_HIT_RADIUS) {
+        if (this._distSq(attacker, victim) < DASH_HIT_RADIUS * DASH_HIT_RADIUS) {
           victim.applyKnockback(attacker.x, attacker.y);
           events.push({ type: 'sumo_hit', attackerId: attacker.id, victimId: victim.id });
         }
@@ -62,8 +62,8 @@ class SumoMode extends BaseGameMode {
       const p = players.get(id);
       if (!p) continue;
 
-      const dist = this._dist(p, this.ringCenter);
-      if (dist > this.ringRadius + p.radius) {
+      const distSq = this._distSq(p, this.ringCenter);
+      if (distSq > (this.ringRadius + p.radius) * (this.ringRadius + p.radius)) {
         this.eliminatedPlayers.add(id);
         p.isEliminated = true;
         events.push({ type: 'sumo_eliminated', playerId: id });
@@ -124,10 +124,10 @@ class SumoMode extends BaseGameMode {
     }).sort((a, b) => b.score - a.score);
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

@@ -107,7 +107,7 @@ class HideSeekMode extends BaseGameMode {
         const hider = players.get(id);
         if (!hider) continue;
 
-        if (this._dist(seeker, hider) < DASH_HIT_RADIUS) {
+        if (this._distSq(seeker, hider) < DASH_HIT_RADIUS * DASH_HIT_RADIUS) {
           this.foundPlayers.add(id);
           hider.isEliminated = true;
           events.push({ type: 'hideseek_found', seekerId: this.seekerId, hiderId: id });
@@ -195,10 +195,10 @@ class HideSeekMode extends BaseGameMode {
     }).sort((a, b) => b.score - a.score);
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

@@ -77,7 +77,7 @@ class TagMode extends BaseGameMode {
       if (itPlayer) {
         for (const other of players.values()) {
           if (other.id === this.itPlayerId) continue;
-          if (this._dist(itPlayer, other) < TAG_RADIUS) {
+          if (this._distSq(itPlayer, other) < TAG_RADIUS * TAG_RADIUS) {
             // Transfer "it"
             itPlayer.isIt = false;
             other.isIt = true;
@@ -153,10 +153,10 @@ class TagMode extends BaseGameMode {
     }).sort((a, b) => b.score - a.score);
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

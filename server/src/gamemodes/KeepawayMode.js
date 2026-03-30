@@ -91,7 +91,7 @@ class KeepawayMode extends BaseGameMode {
     // Bone pickup
     if (this.boneVisible && !this.boneOwner && this.boneDropCooldown <= 0) {
       for (const player of players.values()) {
-        if (this._dist(player, this.bone) < BONE_PICKUP_RADIUS) {
+        if (this._distSq(player, this.bone) < BONE_PICKUP_RADIUS * BONE_PICKUP_RADIUS) {
           this.boneOwner = player.id;
           player.hasBone = true;
           this.boneVisible = false;
@@ -107,7 +107,7 @@ class KeepawayMode extends BaseGameMode {
       const victim = players.get(this.boneOwner);
       if (!victim) continue;
 
-      if (this._dist(attacker, victim) < DASH_HIT_RADIUS) {
+      if (this._distSq(attacker, victim) < DASH_HIT_RADIUS * DASH_HIT_RADIUS) {
         victim.applyKnockback(attacker.x, attacker.y);
         this._dropBoneToward(victim, attacker);
         events.push({
@@ -196,10 +196,10 @@ class KeepawayMode extends BaseGameMode {
     return { x, y };
   }
 
-  _dist(a, b) {
+  _distSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return dx * dx + dy * dy;
   }
 }
 

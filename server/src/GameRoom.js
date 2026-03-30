@@ -207,8 +207,11 @@ class GameRoom {
       }
     }
 
-    // Broadcast state
-    this.io.to(this.code).emit('game:state', this._gameState());
+    // Broadcast state at 30fps (every other tick) to save bandwidth
+    this._sendCounter = ((this._sendCounter || 0) + 1) % 2;
+    if (this._sendCounter === 0) {
+      this.io.to(this.code).emit('game:state', this._gameState());
+    }
   }
 
   // --- End game ---

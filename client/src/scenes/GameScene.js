@@ -952,6 +952,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   _spawnDashTrail(x, y, color) {
+    // Limit trail spawn to every 3rd frame to reduce GC pressure
+    this._trailCounter = ((this._trailCounter || 0) + 1) % 3;
+    if (this._trailCounter !== 0) return;
+
     const trail = this.add.circle(x, y, 14, color, 0.3);
     this.tweens.add({ targets: trail, alpha: 0, scaleX: 2, scaleY: 2, duration: 400, ease: 'Power2' });
     this._dashTrails.push(trail);
