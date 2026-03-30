@@ -7,6 +7,7 @@ export const GAME_MODES = {
   dodgeball: { id: 'dodgeball', name: 'Dodgeball',  nameKo: '피구',           emoji: '🏐', desc: '공을 피해 살아남아라!', minPlayers: 2 },
   hideseek:  { id: 'hideseek',  name: 'Hide & Seek', nameKo: '숨바꼭질',      emoji: '🙈', desc: '숨어라! 술래가 찾는다!', minPlayers: 3 },
   snowball:  { id: 'snowball',  name: 'Snowball Fight', nameKo: '눈싸움',    emoji: '❄️', desc: '눈덩이 맞추면 빙결! 최다 적중 승리!', minPlayers: 2 },
+  zombie:    { id: 'zombie',    name: 'Zombie',     nameKo: '좀비 감염',      emoji: '🧟', desc: '감염을 피해 살아남아라! 밀쳐서 배신!', minPlayers: 3 },
   random:    { id: 'random',    name: 'Random',     nameKo: '랜덤',           emoji: '🎲', desc: '무작위 게임!',       minPlayers: 2 },
 };
 

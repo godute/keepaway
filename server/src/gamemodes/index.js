@@ -6,6 +6,7 @@ const TerritoryMode = require('./TerritoryMode');
 const DodgeballMode = require('./DodgeballMode');
 const HideSeekMode = require('./HideSeekMode');
 const SnowballMode = require('./SnowballMode');
+const ZombieMode = require('./ZombieMode');
 
 const GAME_MODES = {
   keepaway:  { Mode: KeepawayMode,  name: 'Keepaway',     nameKo: '뼈다귀 쟁탈전', emoji: '🦴', minPlayers: 2 },
@@ -16,6 +17,7 @@ const GAME_MODES = {
   dodgeball: { Mode: DodgeballMode, name: 'Dodgeball',   nameKo: '피구',           emoji: '🏐', minPlayers: 2 },
   hideseek:  { Mode: HideSeekMode, name: 'Hide & Seek', nameKo: '숨바꼭질',       emoji: '🙈', minPlayers: 3 },
   snowball:  { Mode: SnowballMode, name: 'Snowball Fight', nameKo: '눈싸움',    emoji: '❄️', minPlayers: 2 },
+  zombie:    { Mode: ZombieMode,  name: 'Zombie Infection', nameKo: '좀비 감염', emoji: '🧟', minPlayers: 3 },
 };
 
 function createGameMode(gameType, room) {

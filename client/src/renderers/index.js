@@ -6,6 +6,7 @@ import { TerritoryRenderer } from './TerritoryRenderer.js';
 import { DodgeballRenderer } from './DodgeballRenderer.js';
 import { HideSeekRenderer } from './HideSeekRenderer.js';
 import { SnowballRenderer } from './SnowballRenderer.js';
+import { ZombieRenderer } from './ZombieRenderer.js';
 
 const RENDERER_MAP = {
   keepaway: KeepawayRenderer,
@@ -16,6 +17,7 @@ const RENDERER_MAP = {
   dodgeball: DodgeballRenderer,
   hideseek: HideSeekRenderer,
   snowball: SnowballRenderer,
+  zombie: ZombieRenderer,
 };
 
 /**
