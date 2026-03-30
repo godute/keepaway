@@ -18,17 +18,21 @@ export class SnowballRenderer extends BaseRenderer {
     const scene = this.scene;
     const W = scene.mapWidth;
 
-    // Timer text
-    this._timerText = scene.add.text(W / 2, 14, '', {
-      fontSize: '18px', color: '#ffffff', fontFamily: 'Jua, sans-serif',
-      stroke: '#000000', strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(30);
+    // Timer background + text (prominent)
+    this._timerBg = scene.add.graphics().setDepth(80);
+    this._timerBg.fillStyle(0x000000, 0.5);
+    this._timerBg.fillRoundedRect(W / 2 - 70, 4, 140, 44, 10);
+
+    this._timerText = scene.add.text(W / 2, 16, '', {
+      fontSize: '22px', color: '#ffffff', fontFamily: 'Jua, sans-serif',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(80);
 
     // Hit count display
-    this._hitText = scene.add.text(W / 2, 34, '', {
-      fontSize: '12px', color: '#aaddff', fontFamily: 'Jua, sans-serif',
+    this._hitText = scene.add.text(W / 2, 38, '', {
+      fontSize: '13px', color: '#aaddff', fontFamily: 'Jua, sans-serif',
       stroke: '#000000', strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(80);
   }
 
   onGameState(state) {
@@ -185,6 +189,7 @@ export class SnowballRenderer extends BaseRenderer {
     }
     this._frozenOverlays.clear();
 
+    if (this._timerBg) { this._timerBg.destroy(); this._timerBg = null; }
     if (this._timerText) { this._timerText.destroy(); this._timerText = null; }
     if (this._hitText) { this._hitText.destroy(); this._hitText = null; }
   }
