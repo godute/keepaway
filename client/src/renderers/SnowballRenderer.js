@@ -45,9 +45,9 @@ export class SnowballRenderer extends BaseRenderer {
 
       if (!bg) {
         // Create snowball visual
-        const glow = scene.add.circle(0, 0, 12, 0xaaddff, 0.15).setDepth(24);
-        const body = scene.add.circle(0, 0, 6, 0xffffff, 0.95).setDepth(25);
-        const highlight = scene.add.circle(-2, -2, 2, 0xffffff, 0.6).setDepth(25);
+        const glow = scene.add.circle(0, 0, 18, 0xaaddff, 0.2).setDepth(24);
+        const body = scene.add.circle(0, 0, 10, 0xffffff, 0.95).setDepth(25);
+        const highlight = scene.add.circle(-3, -3, 3, 0xffffff, 0.6).setDepth(25);
         const container = scene.add.container(sb.x, sb.y, [glow, body, highlight]).setDepth(25);
 
         bg = { container, glow };

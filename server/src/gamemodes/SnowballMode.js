@@ -2,11 +2,11 @@ const BaseGameMode = require('./BaseGameMode');
 const { PLAYER_RADIUS } = require('../Player');
 
 const GAME_DURATION = 60;
-const SNOWBALL_SPEED = 400;
-const SNOWBALL_RADIUS = 6;
+const SNOWBALL_SPEED = 300;
+const SNOWBALL_RADIUS = 10;
 const SNOWBALL_LIFETIME = 3;
 const FREEZE_DURATION = 3;
-const HIT_RADIUS = PLAYER_RADIUS + SNOWBALL_RADIUS;
+const HIT_RADIUS = PLAYER_RADIUS + SNOWBALL_RADIUS + 6; // generous hit box
 const MAP_W = 960;
 const MAP_H = 540;
 
@@ -97,7 +97,7 @@ class SnowballMode extends BaseGameMode {
       if (this.freezeTimers.has(id)) continue;
 
       if (p.isDashing && !wasDashing) {
-        // Get dash direction
+        // Get throw direction from dash, then CANCEL the dash (throw only, no movement)
         const len = Math.sqrt(p.dashVx * p.dashVx + p.dashVy * p.dashVy);
         if (len > 0) {
           const dirX = p.dashVx / len;
@@ -116,6 +116,14 @@ class SnowballMode extends BaseGameMode {
           this.snowballs.push(snowball);
           events.push({ type: 'snowball_throw', playerId: id, x: snowball.x, y: snowball.y });
         }
+
+        // Cancel dash — player stays in place, only throws
+        p.isDashing = false;
+        p.dashTimer = 0;
+        p.vx = 0;
+        p.vy = 0;
+        // Reduce cooldown for faster throwing (0.6s instead of 1.2s)
+        p.dashCooldown = 0.6;
       }
     }
 
