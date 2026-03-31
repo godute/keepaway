@@ -20,6 +20,7 @@ const config = {
     min: { width: 400, height: 300 },
     max: { width: 1600, height: 1200 },
   },
+  fps: { target: 60, forceSetTimeOut: false },
   scene: [LobbyScene, GameScene],
 };
 

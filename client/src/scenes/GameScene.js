@@ -382,6 +382,7 @@ export class GameScene extends Phaser.Scene {
 
   update() {
     if (!this.gameState) return;
+    this._frameTime = Date.now(); // cache once per frame
 
     let dx = 0, dy = 0, dash = false;
 
@@ -403,8 +404,7 @@ export class GameScene extends Phaser.Scene {
 
     socket.sendInput(dx, dy, dash);
 
-    // Cleanup old trails
-    this._dashTrails = this._dashTrails.filter(t => { if (t.alpha <= 0) { t.destroy(); return false; } return true; });
+    // Trail cleanup handled by pool (setVisible(false) on complete)
 
     this._updateCooldownUI();
   }
@@ -643,11 +643,18 @@ export class GameScene extends Phaser.Scene {
   // --- Cooldown UI ---
 
   _updateCooldownUI() {
-    this._cooldownGraphic.clear();
     const me = this.gameState?.players.find(p => p.id === this.myId);
-    if (!me) return;
-    const cd = me.dashCooldown || 0;
-    if (cd <= 0) return;
+    const cd = me?.dashCooldown || 0;
+    const cdRound = Math.round(cd * 10); // quantize to reduce redraws
+    if (cdRound === this._lastCdRound) return;
+    this._lastCdRound = cdRound;
+
+    this._cooldownGraphic.clear();
+    if (cd <= 0 || !me) {
+      const dashBtn = document.getElementById('dash-btn');
+      if (dashBtn) dashBtn.style.opacity = '1';
+      return;
+    }
     const pct = cd / DASH_COOLDOWN_MAX;
     const g = this.playerGraphics.get(this.myId);
     if (!g) return;
@@ -659,7 +666,7 @@ export class GameScene extends Phaser.Scene {
     this._cooldownGraphic.strokePath();
 
     const dashBtn = document.getElementById('dash-btn');
-    if (dashBtn) dashBtn.style.opacity = cd > 0 ? '0.4' : '1';
+    if (dashBtn) dashBtn.style.opacity = '0.4';
   }
 
   // --- Game state ---
@@ -688,20 +695,23 @@ export class GameScene extends Phaser.Scene {
       this.modeRenderer.onGameState(state);
     }
 
-    // Scoreboard — delegate formatting to renderer
+    // Scoreboard — only redraw when text changes
     const sorted = state.players.slice().sort((a, b) => b.score - a.score);
-    const panelH = Math.max(30, sorted.length * 18 + 12);
-    this._scorePanel.clear();
-    this._scorePanel.fillStyle(0x000000, 0.55);
-    this._scorePanel.fillRoundedRect(6, 6, 170, panelH, 8);
-
     let lines;
     if (this.modeRenderer?.formatScoreboard) {
       lines = this.modeRenderer.formatScoreboard(sorted, this.myId);
     } else {
       lines = sorted.map(p => `${p.name}  ${Math.floor(p.score)}`);
     }
-    this.scoreboard.setText(lines.join('\n'));
+    const scoreText = lines.join('\n');
+    if (scoreText !== this._lastScoreText) {
+      this._lastScoreText = scoreText;
+      const panelH = Math.max(30, sorted.length * 18 + 12);
+      this._scorePanel.clear();
+      this._scorePanel.fillStyle(0x000000, 0.55);
+      this._scorePanel.fillRoundedRect(6, 6, 170, panelH, 8);
+      this.scoreboard.setText(scoreText);
+    }
   }
 
   // --- Player graphics ---
@@ -948,18 +958,22 @@ export class GameScene extends Phaser.Scene {
     g.container.setPosition(tx, ty);
     g.nameText.setPosition(tx, ty + p.radius + 16);
 
-    // Let renderer draw score bars (or use default)
-    if (this.modeRenderer?.drawPlayerScoreBar) {
-      this.modeRenderer.drawPlayerScoreBar(g, p, tx, ty);
-    } else {
-      const barW = 50, barH = 5;
-      const pct = Math.min(p.score / 30, 1);
-      g.scoreBar.clear();
-      g.scoreBar.fillStyle(0x333333, 0.5);
-      g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 30, barW, barH, 2);
-      if (pct > 0) {
-        g.scoreBar.fillStyle(0xffd700, 0.9);
-        g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 30, barW * pct, barH, 2);
+    // Let renderer draw score bars (or use default) — only redraw on change
+    const scoreKey = `${Math.floor(p.score)}_${Math.round(tx)}_${Math.round(ty)}`;
+    if (scoreKey !== g._lastScoreKey) {
+      g._lastScoreKey = scoreKey;
+      if (this.modeRenderer?.drawPlayerScoreBar) {
+        this.modeRenderer.drawPlayerScoreBar(g, p, tx, ty);
+      } else {
+        const barW = 50, barH = 5;
+        const pct = Math.min(p.score / 30, 1);
+        g.scoreBar.clear();
+        g.scoreBar.fillStyle(0x333333, 0.5);
+        g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 30, barW, barH, 2);
+        if (pct > 0) {
+          g.scoreBar.fillStyle(0xffd700, 0.9);
+          g.scoreBar.fillRoundedRect(tx - barW / 2, ty + p.radius + 30, barW * pct, barH, 2);
+        }
       }
     }
 
@@ -989,15 +1003,14 @@ export class GameScene extends Phaser.Scene {
     } else if (p.hasBone) {
       // Bone holder: golden glow + pulsing scale
       setBodyColor(0xffe070);
-      const pulse = 1.05 + Math.sin(Date.now() / 150) * 0.07;
+      const now = this._frameTime || (this._frameTime = Date.now());
+      const pulse = 1.05 + Math.sin(now / 150) * 0.07;
       g.container.setScale(pulse);
       g.container.setAlpha(1);
-      // Outer glow aura
-      const glowAlpha = 0.15 + Math.sin(Date.now() / 300) * 0.1;
-      this._cooldownGraphic.fillStyle(0xffd700, glowAlpha);
+      // Outer glow aura + pulsing ring
+      this._cooldownGraphic.fillStyle(0xffd700, 0.15 + Math.sin(now / 300) * 0.1);
       this._cooldownGraphic.fillCircle(tx, ty, p.radius + 22);
-      // Pulsing ring
-      this._cooldownGraphic.lineStyle(4, 0xffd700, 0.6 + Math.sin(Date.now() / 200) * 0.3);
+      this._cooldownGraphic.lineStyle(4, 0xffd700, 0.6 + Math.sin(now / 200) * 0.3);
       this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 14);
       // Bone icon above head
       this._cooldownGraphic.fillStyle(0xfff8dc, 0.9);
@@ -1007,10 +1020,11 @@ export class GameScene extends Phaser.Scene {
     } else if (p.hasBomb) {
       // Bomb holder: red pulsing
       setBodyColor(0xff4444);
-      const pulse = 1.0 + Math.sin(Date.now() / 100) * 0.08;
+      const now = this._frameTime || (this._frameTime = Date.now());
+      const pulse = 1.0 + Math.sin(now / 100) * 0.08;
       g.container.setScale(pulse);
       g.container.setAlpha(1);
-      this._cooldownGraphic.lineStyle(3, 0xff0000, 0.4 + Math.sin(Date.now() / 150) * 0.3);
+      this._cooldownGraphic.lineStyle(3, 0xff0000, 0.4 + Math.sin(now / 150) * 0.3);
       this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 12);
     } else if (p.isIt) {
       // Tag "it" player: red outline
@@ -1034,9 +1048,21 @@ export class GameScene extends Phaser.Scene {
     this._trailCounter = ((this._trailCounter || 0) + 1) % 3;
     if (this._trailCounter !== 0) return;
 
-    const trail = this.add.circle(x, y, 14, color, 0.3);
-    this.tweens.add({ targets: trail, alpha: 0, scaleX: 2, scaleY: 2, duration: 400, ease: 'Power2' });
-    this._dashTrails.push(trail);
+    // Object pool: reuse inactive trails instead of creating new ones
+    let trail = null;
+    for (let i = 0; i < this._dashTrails.length; i++) {
+      if (!this._dashTrails[i].visible) { trail = this._dashTrails[i]; break; }
+    }
+    if (!trail) {
+      if (this._dashTrails.length >= 24) return; // pool cap
+      trail = this.add.circle(0, 0, 14, color, 0.3);
+      this._dashTrails.push(trail);
+    }
+    trail.setPosition(x, y).setFillStyle(color, 0.3).setScale(1).setAlpha(0.3).setVisible(true);
+    this.tweens.add({
+      targets: trail, alpha: 0, scaleX: 2, scaleY: 2, duration: 400, ease: 'Power2',
+      onComplete: () => trail.setVisible(false),
+    });
   }
 
   // --- Events ---
