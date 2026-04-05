@@ -87,31 +87,20 @@ export class HideSeekRenderer extends BaseRenderer {
     }
 
     // Fog of war: if local player is seeker, hide distant hiders and draw darkness
-    this._fogGraphic.clear();
-
     if (isSeeker) {
       const me = state.players.find(p => p.id === myId);
       if (me) {
         const seekR = state.seekRadius || this._seekRadius;
 
-        // Draw fog overlay (dark around seeker vision)
-        this._fogGraphic.fillStyle(0x000000, 0.7);
-        this._fogGraphic.fillRect(0, 0, scene.mapWidth, scene.mapHeight);
-
-        // Cut out visible circle using clear blend (draw brighter circle)
-        // Use a radial gradient effect with concentric circles
-        const steps = 12;
-        for (let i = steps; i >= 0; i--) {
-          const r = seekR * (0.8 + 0.2 * (i / steps));
-          const alpha = 0.7 * (i / steps);
-          this._fogGraphic.fillStyle(0x000000, alpha);
-          this._fogGraphic.fillCircle(me.x, me.y, r);
+        // Only redraw fog when seeker moves significantly (8px+) or radius changes
+        const dx = me.x - (this._lastFogX || 0);
+        const dy = me.y - (this._lastFogY || 0);
+        if (dx * dx + dy * dy > 64 || seekR !== this._lastFogR) {
+          this._lastFogX = me.x;
+          this._lastFogY = me.y;
+          this._lastFogR = seekR;
+          this._drawVisionHole(me.x, me.y, seekR);
         }
-        // Clear center completely
-        this._fogGraphic.fillStyle(0x000000, 0);
-        // Use a "light" by overlaying with the scene background approach
-        // Actually, erase the fog in the visible area by redrawing
-        this._drawVisionHole(me.x, me.y, seekR);
 
         // Hide hiders that are outside seek radius
         for (const p of state.players) {

@@ -7,7 +7,8 @@ const MAP_WIDTH = 960;
 const MAP_HEIGHT = 540;
 
 const config = {
-  type: Phaser.AUTO,
+  type: Phaser.WEBGL,
+  render: { antialias: false, pixelArt: true },
   width: MAP_WIDTH,
   height: MAP_HEIGHT,
   backgroundColor: '#1a1a2e',

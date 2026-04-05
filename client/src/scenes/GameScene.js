@@ -86,6 +86,7 @@ export class GameScene extends Phaser.Scene {
 
     // --- Dash cooldown UI ---
     this._cooldownGraphic = this.add.graphics().setDepth(50);
+    this._playerFxGraphic = this.add.graphics().setDepth(25);
 
     // --- Keyboard ---
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -130,6 +131,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   _cleanupPreviousGame() {
+    // Kill all tweens from previous game (prevent repeat:-1 accumulation)
+    try { this.tweens?.killAll(); } catch (e) {}
+
     // Destroy old player graphics (with safety for already-destroyed objects)
     if (this.playerGraphics && this.playerGraphics.size > 0) {
       for (const g of this.playerGraphics.values()) {
@@ -651,7 +655,7 @@ export class GameScene extends Phaser.Scene {
 
     this._cooldownGraphic.clear();
     if (cd <= 0 || !me) {
-      const dashBtn = document.getElementById('dash-btn');
+      const dashBtn = this._dashBtn || (this._dashBtn = document.getElementById('dash-btn'));
       if (dashBtn) dashBtn.style.opacity = '1';
       return;
     }
@@ -673,6 +677,7 @@ export class GameScene extends Phaser.Scene {
 
   _onGameState(state) {
     this.gameState = state;
+    this._playerFxGraphic.clear();
 
     const seen = new Set();
     for (const p of state.players) {
@@ -1008,15 +1013,15 @@ export class GameScene extends Phaser.Scene {
       g.container.setScale(pulse);
       g.container.setAlpha(1);
       // Outer glow aura + pulsing ring
-      this._cooldownGraphic.fillStyle(0xffd700, 0.15 + Math.sin(now / 300) * 0.1);
-      this._cooldownGraphic.fillCircle(tx, ty, p.radius + 22);
-      this._cooldownGraphic.lineStyle(4, 0xffd700, 0.6 + Math.sin(now / 200) * 0.3);
-      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 14);
+      this._playerFxGraphic.fillStyle(0xffd700, 0.15 + Math.sin(now / 300) * 0.1);
+      this._playerFxGraphic.fillCircle(tx, ty, p.radius + 22);
+      this._playerFxGraphic.lineStyle(4, 0xffd700, 0.6 + Math.sin(now / 200) * 0.3);
+      this._playerFxGraphic.strokeCircle(tx, ty, p.radius + 14);
       // Bone icon above head
-      this._cooldownGraphic.fillStyle(0xfff8dc, 0.9);
-      this._cooldownGraphic.fillCircle(tx - 6, ty - p.radius - 20, 4);
-      this._cooldownGraphic.fillCircle(tx + 6, ty - p.radius - 20, 4);
-      this._cooldownGraphic.fillRect(tx - 6, ty - p.radius - 23, 12, 6);
+      this._playerFxGraphic.fillStyle(0xfff8dc, 0.9);
+      this._playerFxGraphic.fillCircle(tx - 6, ty - p.radius - 20, 4);
+      this._playerFxGraphic.fillCircle(tx + 6, ty - p.radius - 20, 4);
+      this._playerFxGraphic.fillRect(tx - 6, ty - p.radius - 23, 12, 6);
     } else if (p.hasBomb) {
       // Bomb holder: red pulsing
       setBodyColor(0xff4444);
@@ -1024,15 +1029,15 @@ export class GameScene extends Phaser.Scene {
       const pulse = 1.0 + Math.sin(now / 100) * 0.08;
       g.container.setScale(pulse);
       g.container.setAlpha(1);
-      this._cooldownGraphic.lineStyle(3, 0xff0000, 0.4 + Math.sin(now / 150) * 0.3);
-      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 12);
+      this._playerFxGraphic.lineStyle(3, 0xff0000, 0.4 + Math.sin(now / 150) * 0.3);
+      this._playerFxGraphic.strokeCircle(tx, ty, p.radius + 12);
     } else if (p.isIt) {
       // Tag "it" player: red outline
       resetBodyColor();
       g.container.setScale(1);
       g.container.setAlpha(1);
-      this._cooldownGraphic.lineStyle(3, 0xff4444, 0.6);
-      this._cooldownGraphic.strokeCircle(tx, ty, p.radius + 10);
+      this._playerFxGraphic.lineStyle(3, 0xff4444, 0.6);
+      this._playerFxGraphic.strokeCircle(tx, ty, p.radius + 10);
     } else {
       g.container.setScale(1);
       g.container.setAlpha(1);

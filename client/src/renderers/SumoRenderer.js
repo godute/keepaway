@@ -41,29 +41,28 @@ export class SumoRenderer extends BaseRenderer {
     const cy = H / 2;
 
     const radius = state.ringRadius || 200;
-    this._ringRadius = radius;
 
-    // Redraw ring
-    this._ringGraphic.clear();
-    this._ringGraphic.lineStyle(4, 0xffffff, 0.8);
-    this._ringGraphic.strokeCircle(cx, cy, radius);
+    // Only redraw ring when radius changes
+    if (radius !== this._lastRingRadius) {
+      this._lastRingRadius = radius;
+      this._ringRadius = radius;
 
-    // Inner dashed marking
-    this._ringGraphic.lineStyle(1, 0xffffff, 0.2);
-    this._ringGraphic.strokeCircle(cx, cy, radius * 0.7);
+      this._ringGraphic.clear();
+      this._ringGraphic.lineStyle(4, 0xffffff, 0.8);
+      this._ringGraphic.strokeCircle(cx, cy, radius);
+      this._ringGraphic.lineStyle(1, 0xffffff, 0.2);
+      this._ringGraphic.strokeCircle(cx, cy, radius * 0.7);
 
-    // Redraw glow
-    this._ringGlow.clear();
-    this._ringGlow.lineStyle(12, 0xff6600, 0.12);
-    this._ringGlow.strokeCircle(cx, cy, radius);
-    this._ringGlow.lineStyle(24, 0xff4400, 0.06);
-    this._ringGlow.strokeCircle(cx, cy, radius);
-
-    // Danger zone shading outside the ring
-    this._ringGlow.fillStyle(0xff0000, 0.04);
-    this._ringGlow.fillRect(0, 0, W, H);
-    this._ringGlow.fillStyle(0x000000, 0.04);
-    this._ringGlow.fillCircle(cx, cy, radius);
+      this._ringGlow.clear();
+      this._ringGlow.lineStyle(12, 0xff6600, 0.12);
+      this._ringGlow.strokeCircle(cx, cy, radius);
+      this._ringGlow.lineStyle(24, 0xff4400, 0.06);
+      this._ringGlow.strokeCircle(cx, cy, radius);
+      this._ringGlow.fillStyle(0xff0000, 0.04);
+      this._ringGlow.fillRect(0, 0, W, H);
+      this._ringGlow.fillStyle(0x000000, 0.04);
+      this._ringGlow.fillCircle(cx, cy, radius);
+    }
 
     // Check if local player is close to the edge - warning flash
     const myId = scene.myId;
